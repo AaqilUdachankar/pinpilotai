@@ -57,6 +57,17 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
+// Strict rate limiter for Authentication (High Security protection against brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: {
+    success: false,
+    message: 'Too many authentication attempts from this IP, please try again after 15 minutes.',
+  },
+});
+app.use('/api/auth/', authLimiter);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({

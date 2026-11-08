@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, Lock, Mail, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Common/Toast';
+import { GoogleSignInButton } from '../components/Common/GoogleSignInButton';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -101,6 +102,21 @@ export const Login = () => {
               )}
             </button>
           </form>
+
+          {/* Social Divider */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-slate-900 px-3 text-slate-400 font-bold tracking-wider text-[10px]">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          {/* Google Sign-In */}
+          <GoogleSignInButton text="Sign in with Google" />
 
           {/* Quick Demo Credentials Autofill */}
           <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">

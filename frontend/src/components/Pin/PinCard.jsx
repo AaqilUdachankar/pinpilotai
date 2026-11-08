@@ -129,6 +129,43 @@ export const PinCard = ({
               Visit <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+
+          {/* Mobile Touch Action Row (Ensures mobile screens have full touch actions) */}
+          <div className="flex sm:hidden items-center justify-between gap-1.5 mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            {pin.publishingStatus !== 'published' && (
+              <button
+                type="button"
+                onClick={() => onPublishNow(pin)}
+                className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-rose-600 active:bg-rose-700 text-white text-[11px] font-bold shadow-sm"
+              >
+                <Send className="w-3 h-3" /> Publish
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onViewChecklist(pin)}
+              className="flex items-center gap-1 py-1.5 px-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold"
+              title="Audit Checklist"
+            >
+              <ClipboardCheck className="w-3 h-3" /> Checklist
+            </button>
+            <button
+              type="button"
+              onClick={() => onEdit(pin)}
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+              title="Edit Pin"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onReschedule(pin)}
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+              title="Reschedule"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Footer: Scheduled Time, Checklist & More Actions */}

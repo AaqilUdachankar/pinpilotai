@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { ArrowRight, Lock, Mail, User as UserIcon, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Common/Toast';
+import { GoogleSignInButton } from '../components/Common/GoogleSignInButton';
 
 export const Register = () => {
   const [name, setName] = useState('');
@@ -118,6 +119,21 @@ export const Register = () => {
               )}
             </button>
           </form>
+
+          {/* Social Divider */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-slate-900 px-3 text-slate-400 font-bold tracking-wider text-[10px]">
+                Or register with
+              </span>
+            </div>
+          </div>
+
+          {/* Google Sign-In */}
+          <GoogleSignInButton text="Sign up with Google" />
 
           <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
             Already have an account?{' '}

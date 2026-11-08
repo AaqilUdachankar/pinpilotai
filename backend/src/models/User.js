@@ -17,7 +17,24 @@ const userSchema = new mongoose.Schema({
   },
   passwordHash: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function () {
+      return !this.googleId;
+    },
+  },
+  googleId: {
+    type: String,
+    default: null,
+    sparse: true,
+    index: true,
+  },
+  avatar: {
+    type: String,
+    default: '',
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local',
   },
   pinterestAccount: {
     type: mongoose.Schema.Types.ObjectId,

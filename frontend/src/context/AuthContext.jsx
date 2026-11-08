@@ -61,6 +61,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleSignIn = async (googlePayload) => {
+    const res = await authAPI.googleLogin(googlePayload);
+    if (res.data?.success) {
+      setToken(res.data.token);
+      setUser(res.data.user);
+      localStorage.setItem('pinpilot_token', res.data.token);
+      localStorage.setItem('pinpilot_user', JSON.stringify(res.data.user));
+      if (res.data.user.pinterestAccount) {
+        setPinterestAccount(res.data.user.pinterestAccount);
+      }
+      return res.data;
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -101,6 +115,7 @@ export const AuthProvider = ({ children }) => {
         pinterestAccount,
         login,
         register,
+        googleSignIn,
         logout,
         refreshPinterestStatus,
         updateUserSettings,

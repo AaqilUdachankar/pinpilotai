@@ -112,19 +112,21 @@ export const PublishingCalendar = () => {
 
       {/* Calendar Grid Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-        {/* Days of Week Header */}
-        <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800 text-center py-3 bg-slate-50/50 dark:bg-slate-800/40 text-xs font-bold text-slate-400 uppercase tracking-wider">
-          <div>Sun</div>
-          <div>Mon</div>
-          <div>Tue</div>
-          <div>Wed</div>
-          <div>Thu</div>
-          <div>Fri</div>
-          <div>Sat</div>
-        </div>
+        <div className="overflow-x-auto scrollbar-thin">
+          <div className="min-w-[700px]">
+            {/* Days of Week Header */}
+            <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800 text-center py-3 bg-slate-50/50 dark:bg-slate-800/40 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
 
-        {/* Days Matrix */}
-        <div className="grid grid-cols-7 auto-rows-[minmax(120px,auto)] divide-x divide-y divide-slate-100 dark:divide-slate-800">
+            {/* Days Matrix */}
+            <div className="grid grid-cols-7 auto-rows-[minmax(120px,auto)] divide-x divide-y divide-slate-100 dark:divide-slate-800">
           {/* Empty prefix cells */}
           {Array.from({ length: firstDayIndex }).map((_, i) => (
             <div key={`empty-${i}`} className="bg-slate-50/20 dark:bg-slate-950/20 p-2 min-h-[120px]" />
@@ -203,6 +205,8 @@ export const PublishingCalendar = () => {
           })}
         </div>
       </div>
+    </div>
+  </div>
 
       {/* Legend & Guidance */}
       <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
