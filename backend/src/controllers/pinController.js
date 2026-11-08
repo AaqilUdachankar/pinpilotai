@@ -1,0 +1,335 @@
+import Pin from '../models/Pin.js';
+import Campaign from '../models/Campaign.js';
+import ScheduledJob from '../models/ScheduledJob.js';
+import ActivityLog from '../models/ActivityLog.js';
+import { generateSinglePinImage } from '../services/imageService.js';
+import { generateCampaignContent } from '../services/aiService.js';
+import { schedulePin, executePinPublishing, updateCampaignStats } from '../services/schedulerService.js';
+import { fetchPinAnalytics } from '../services/pinterestService.js';
+import { logger } from '../utils/logger.js';
+
+export const getPins = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { campaignId, status, limit = 50, page = 1 } = req.query;
+
+    const query = { userId };
+    if (campaignId) query.campaignId = campaignId;
+    if (status && status !== 'all') query.publishingStatus = status;
+
+    const pins = await Pin.find(query)
+      .populate('campaignId', 'campaignName productName affiliateUrl selectedBoard')
+      .sort({ scheduledAt: 1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Pin.countDocuments(query);
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      pins,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPinById = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    }).populate('campaignId');
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    res.json({ success: true, pin });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updatePin = async (req, res) => {
+  try {
+    const { title, description, caption, keywords, hashtags, callToAction, affiliateUrl, pinterestBoardId } = req.body;
+
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    if (title) pin.title = title.substring(0, 100).trim();
+    if (description) pin.description = description.substring(0, 800).trim();
+    if (caption !== undefined) pin.caption = caption;
+    if (keywords) pin.keywords = Array.isArray(keywords) ? keywords : keywords.split(',').map((k) => k.trim());
+    if (hashtags) pin.hashtags = Array.isArray(hashtags) ? hashtags : hashtags.split(',').map((h) => h.trim());
+    if (callToAction) pin.callToAction = callToAction;
+    if (affiliateUrl) pin.affiliateUrl = affiliateUrl.trim();
+    if (pinterestBoardId) pin.pinterestBoardId = pinterestBoardId;
+
+    await pin.save();
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      campaignId: pin.campaignId,
+      pinId: pin._id,
+      action: 'PIN_UPDATED',
+      status: 'info',
+      message: `Pin "${pin.title.substring(0, 30)}..." updated by user.`,
+    });
+
+    res.json({
+      success: true,
+      message: 'Pin updated successfully.',
+      pin,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const regeneratePinImage = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    }).populate('campaignId');
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    const { customPrompt } = req.body;
+    const campaign = pin.campaignId;
+
+    const newImage = await generateSinglePinImage({
+      productName: campaign?.productName || 'Product',
+      brand: campaign?.brand || '',
+      category: campaign?.productCategory || 'General',
+      concept: {
+        conceptIndex: pin.conceptIndex || 1,
+        conceptName: pin.creativeConcept?.name || 'Product Showcase',
+      },
+      customPrompt,
+      userApiKeys: req.user.apiKeys,
+    });
+
+    pin.imageUrl = newImage.imageUrl;
+    pin.cloudinaryPublicId = newImage.cloudinaryPublicId;
+    await pin.save();
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      campaignId: pin.campaignId._id,
+      pinId: pin._id,
+      action: 'PIN_IMAGE_REGENERATED',
+      status: 'success',
+      message: `Image regenerated for pin #${pin.conceptIndex}`,
+    });
+
+    res.json({
+      success: true,
+      message: 'Pin image regenerated successfully.',
+      pin,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const regeneratePinContent = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    }).populate('campaignId');
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    const campaign = pin.campaignId;
+    const content = await generateCampaignContent({
+      productName: campaign?.productName || 'Product',
+      productDescription: campaign?.productDescription || '',
+      brand: campaign?.brand || '',
+      category: campaign?.productCategory || 'General',
+      price: campaign?.price || '',
+      features: campaign?.features || [],
+      affiliateUrl: pin.affiliateUrl,
+      customInstructions: req.body?.instructions || '',
+      userApiKeys: req.user.apiKeys,
+      disclosureText: req.user.settings?.defaultAffiliateDisclosure,
+    });
+
+    // Match concept index
+    const matchingConcept = content.find((c) => c.conceptIndex === pin.conceptIndex) || content[0];
+
+    pin.title = matchingConcept.pinTitle;
+    pin.description = matchingConcept.description;
+    pin.caption = matchingConcept.caption;
+    pin.keywords = matchingConcept.keywords;
+    pin.hashtags = matchingConcept.hashtags;
+    pin.callToAction = matchingConcept.callToAction;
+
+    await pin.save();
+
+    await ActivityLog.create({
+      userId: req.user._id,
+      campaignId: pin.campaignId._id,
+      pinId: pin._id,
+      action: 'PIN_CONTENT_REGENERATED',
+      status: 'success',
+      message: `SEO content regenerated for pin #${pin.conceptIndex}`,
+    });
+
+    res.json({
+      success: true,
+      message: 'Pin SEO content regenerated successfully.',
+      pin,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const reschedulePin = async (req, res) => {
+  try {
+    const { scheduledAt } = req.body;
+    if (!scheduledAt) {
+      return res.status(400).json({ success: false, message: 'New scheduled date & time is required.' });
+    }
+
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    const newDate = new Date(scheduledAt);
+    await schedulePin({
+      pinId: pin._id,
+      campaignId: pin.campaignId,
+      userId: req.user._id,
+      publishDate: newDate,
+    });
+
+    pin.scheduledAt = newDate;
+    pin.publishingStatus = 'scheduled';
+    await pin.save();
+
+    res.json({
+      success: true,
+      message: `Pin rescheduled for ${newDate.toLocaleString()}`,
+      pin,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const publishPinNow = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    logger.info(`Manual 'Publish Now' triggered for pin ${pin._id}`);
+
+    // Call execution
+    await executePinPublishing({
+      pinId: pin._id,
+      campaignId: pin.campaignId,
+      userId: req.user._id,
+    });
+
+    const updatedPin = await Pin.findById(pin._id);
+
+    if (updatedPin.publishingStatus === 'published') {
+      res.json({
+        success: true,
+        message: 'Pin successfully published to Pinterest!',
+        pin: updatedPin,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: `Publishing failed: ${updatedPin.lastError || 'Unknown Pinterest API error'}`,
+        pin: updatedPin,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deletePin = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    await ScheduledJob.deleteOne({ pinId: pin._id });
+    await Pin.deleteOne({ _id: pin._id });
+
+    await updateCampaignStats(pin.campaignId);
+
+    res.json({
+      success: true,
+      message: 'Pin removed successfully.',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const syncPinMetrics = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+      publishingStatus: 'published',
+    });
+
+    if (!pin || !pin.pinterestPinId) {
+      return res.status(400).json({ success: false, message: 'Pin is not published or missing Pinterest Pin ID.' });
+    }
+
+    const analytics = await fetchPinAnalytics({
+      userId: req.user._id,
+      pinId: pin.pinterestPinId,
+    });
+
+    pin.analytics = analytics;
+    await pin.save();
+
+    res.json({
+      success: true,
+      analytics,
+      pin,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

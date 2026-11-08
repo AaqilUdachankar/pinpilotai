@@ -1,0 +1,23 @@
+{
+  "name": "pinpilot-ai",
+  "version": "1.0.0",
+  "description": "PinPilot AI - Pinterest Affiliate Marketing Automation Platform (Strictly MERN Stack)",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "test:backend": "cd backend && node src/testServices.js && node src/testApiWorkflow.js"
+  },
+  "keywords": [
+    "pinterest",
+    "affiliate-marketing",
+    "automation",
+    "mern",
+    "saas",
+    "agenda",
+    "ai"
+  ],
+  "author": "PinPilot AI",
+  "license": "MIT"
+}
