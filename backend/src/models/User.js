@@ -51,6 +51,10 @@ const userSchema = new mongoose.Schema({
     },
   },
   settings: {
+    enableAffiliateDisclosure: {
+      type: Boolean,
+      default: false, // Optional by default. When Compulsory is toggled ON, posts disclosure text.
+    },
     defaultAffiliateDisclosure: {
       type: String,
       default: 'Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you.',

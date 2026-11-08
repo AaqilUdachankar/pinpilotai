@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -16,19 +16,135 @@ import {
   HelpCircle,
   Copy,
   Zap,
-  Repeat
+  Repeat,
+  Eye,
+  Check,
+  AlertCircle,
+  Layers
 } from 'lucide-react';
 import { useToast } from '../components/Common/Toast';
+import { pinAPI } from '../services/api';
+import { PublishChecklistModal } from '../components/Pin/PublishChecklistModal';
 
 export const Instructions = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('workflow');
 
+  // Interactive Checklist Simulator State
+  const [simulatorMode, setSimulatorMode] = useState('published'); // 'published', 'scheduled', 'optional_disclosure'
+  const [modalPin, setModalPin] = useState(null);
+  const [realPins, setRealPins] = useState([]);
+  const [selectedRealPinId, setSelectedRealPinId] = useState('');
+  const [loadingRealPins, setLoadingRealPins] = useState(false);
+
+  useEffect(() => {
+    const fetchRealPins = async () => {
+      try {
+        setLoadingRealPins(true);
+        const res = await pinAPI.getPins({ limit: 10 });
+        if (res.data?.success && res.data.pins?.length > 0) {
+          setRealPins(res.data.pins);
+          setSelectedRealPinId(res.data.pins[0]._id);
+        }
+      } catch (err) {
+        // Pins fetch fallback (silent in guide)
+      } finally {
+        setLoadingRealPins(false);
+      }
+    };
+    fetchRealPins();
+  }, []);
+
   const copyText = (text) => {
     navigator.clipboard.writeText(text);
     addToast('Copied to clipboard!', 'success');
   };
+
+  // Sample data for interactive checklist simulator
+  const samplePins = {
+    published: {
+      _id: 'demo_published_pin',
+      title: 'The Ultimate TechPro Wireless Gaming Mouse Review & Setup',
+      conceptIndex: 1,
+      creativeConcept: { name: 'Product Showcase' },
+      imageUrl: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://amazon.com/dp/B08N5WRWNW?tag=pinpilot-demo-20',
+      pinterestPinId: '109876543210987654',
+      pinterestBoardId: '987654321012345678',
+      publishingStatus: 'published',
+      scheduledAt: new Date(Date.now() - 3600000).toISOString(),
+      publishedAt: new Date().toISOString(),
+      description: 'Looking for a precision ergonomic gaming mouse? Discover ultra-low latency, 4000 DPI tracking, and silent clicks. Affiliate link – I may earn a commission from qualifying purchases.',
+      keywords: ['gaming mouse', 'wireless setup', 'desk accessories', 'pc gamer', 'tech finds'],
+      publishChecklist: {
+        affiliateLinkVerified: true,
+        pinterestPinVerified: true,
+        boardAttached: true,
+        ftcDisclosurePresent: true,
+        creativeDelivered: true,
+        seoTagsIndexed: true,
+        nextInQueueArmed: true,
+        status: 'passed',
+        notes: 'Pin ID #109876543210987654 verified live on Pinterest board. Destination confirmed.'
+      },
+    },
+    scheduled: {
+      _id: 'demo_scheduled_pin',
+      title: 'Top 5 Standout Features of the Ergonomic Wireless Mouse',
+      conceptIndex: 2,
+      creativeConcept: { name: 'Top Features' },
+      imageUrl: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://amazon.com/dp/B08N5WRWNW?tag=pinpilot-demo-20',
+      pinterestPinId: null,
+      pinterestBoardId: '987654321012345678',
+      publishingStatus: 'scheduled',
+      scheduledAt: new Date(Date.now() + 3600000).toISOString(),
+      publishedAt: null,
+      description: 'A detailed look at the core specs and capabilities of this mouse. Affiliate link – I may earn a commission from qualifying purchases.',
+      keywords: ['work from home', 'ergonomic setup', 'tech gadgets'],
+      publishChecklist: {
+        affiliateLinkVerified: true,
+        pinterestPinVerified: false,
+        boardAttached: true,
+        ftcDisclosurePresent: true,
+        creativeDelivered: true,
+        seoTagsIndexed: true,
+        nextInQueueArmed: true,
+        status: 'pending',
+        notes: 'Queued in 24/7 background scheduler. Arms automatically for hourly publishing.'
+      },
+    },
+    optional_disclosure: {
+      _id: 'demo_optional_disclosure_pin',
+      title: 'Clean Minimalist Workstation Aesthetic & Wireless Peripherals',
+      conceptIndex: 7,
+      creativeConcept: { name: 'Minimal Aesthetic' },
+      imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://target.com/affiliate-product-link',
+      pinterestPinId: '109876543210987655',
+      pinterestBoardId: '987654321012345678',
+      publishingStatus: 'published',
+      scheduledAt: new Date(Date.now() - 7200000).toISOString(),
+      publishedAt: new Date().toISOString(),
+      description: 'Clean aesthetics meet high utility. Seamlessly fits modern desks and minimalist creative workspaces.',
+      keywords: ['minimal desk', 'aesthetic setup', 'workspace design'],
+      campaignId: { appendAffiliateDisclosure: false },
+      publishChecklist: {
+        affiliateLinkVerified: true,
+        pinterestPinVerified: true,
+        boardAttached: true,
+        ftcDisclosurePresent: true, // Passed because optional disclosure mode was selected
+        creativeDelivered: true,
+        seoTagsIndexed: true,
+        nextInQueueArmed: true,
+        status: 'passed',
+        notes: 'Affiliate disclosure is set to Optional. Verified live on Pinterest with clean description.'
+      },
+    },
+  };
+
+  const currentSamplePin = samplePins[simulatorMode];
 
   const tabs = [
     { id: 'workflow', label: '1. Complete Workflow', icon: Sparkles },
@@ -187,71 +303,274 @@ export const Instructions = () => {
 
       {/* Tab 3: Post-Publish Checklist */}
       {activeTab === 'checklist' && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
-              <CheckCircle2 className="w-6 h-6" />
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 space-y-8 shadow-sm">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
+                  7-Point Post-Publish Verification Checklist
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Interactive checklist studio: test simulated states, open the live modal, or audit your real pins.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
-                7-Point Post-Publish Verification Checklist
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Every published pin is audited against 7 compliance and operational criteria.
-              </p>
+
+            <button
+              onClick={() => setModalPin(currentSamplePin)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition shrink-0 active:scale-95"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Launch Live Checklist Modal</span>
+            </button>
+          </div>
+
+          {/* Interactive Simulation Studio */}
+          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-500" /> Interactive Simulator Scenario
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Choose an audit state to see how the 7 compliance checks evaluate the pin.
+                </p>
+              </div>
+
+              {/* State Switcher Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setSimulatorMode('published')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    simulatorMode === 'published'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  ✓ Published (100% Passed)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimulatorMode('scheduled')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    simulatorMode === 'scheduled'
+                      ? 'bg-amber-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  ⏳ Scheduled in Queue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimulatorMode('optional_disclosure')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    simulatorMode === 'optional_disclosure'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  🛡 Optional Disclosure
+                </button>
+              </div>
+            </div>
+
+            {/* Simulated Pin Preview Card */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row items-start gap-4">
+              <img
+                src={currentSamplePin.imageUrl}
+                alt=""
+                className="w-16 h-24 rounded-xl object-cover bg-slate-100 dark:bg-slate-800 shrink-0"
+              />
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                    currentSamplePin.publishingStatus === 'published'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                  }`}>
+                    {currentSamplePin.publishingStatus}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">
+                    Concept #{currentSamplePin.conceptIndex}: {currentSamplePin.creativeConcept.name}
+                  </span>
+                </div>
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
+                  {currentSamplePin.title}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                  {currentSamplePin.description}
+                </p>
+                <div className="pt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                  <span>Destination: <b className="text-slate-700 dark:text-slate-300">{currentSamplePin.affiliateUrl}</b></span>
+                  {currentSamplePin.pinterestPinId && (
+                    <span>Pin ID: <b className="text-rose-600">#{currentSamplePin.pinterestPinId}</b></span>
+                  )}
+                </div>
+              </div>
+
+              <div className="shrink-0 flex flex-col gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setModalPin(currentSamplePin)}
+                  className="w-full flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-bold text-xs transition"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Inspect Checklist Modal</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-3 text-xs">
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">1.</span>
+          {/* Audit Real Pins Section */}
+          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">Affiliate Destination Link Validation</span>
-                <span className="text-slate-500 dark:text-slate-400">Confirms the destination link on Pinterest matches your exact affiliate tracking URL.</span>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-rose-500" /> Audit One of Your Real Database Pins
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Select any pin created in your campaigns to inspect its real server checklist in real time.
+                </p>
+              </div>
+
+              {realPins.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedRealPinId}
+                    onChange={(e) => setSelectedRealPinId(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-slate-800 dark:text-slate-200 max-w-xs truncate"
+                  >
+                    {realPins.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        #{p.conceptIndex || 1} - {p.title?.substring(0, 45)}... ({p.publishingStatus})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const found = realPins.find((p) => p._id === selectedRealPinId);
+                      if (found) setModalPin(found);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shrink-0"
+                  >
+                    <span>Audit Pin</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate('/create-campaign')}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs transition"
+                >
+                  <span>Launch Campaign to Generate Pins</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Detailed 7-Point Audit Breakdown */}
+          <div className="space-y-3">
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
+              The 7 Post-Publish Verification Checks (How PinPilot Audits Every Post)
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">1</span>
+                  <span>Destination Affiliate Link Validation</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  Confirms the Pinterest destination link points directly to your affiliate URL. When pinners click "Visit Site", they land straight on your commission link.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">2</span>
+                  <span>Official Pinterest API Confirmation</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  Validates that Pinterest API v5 accepted the upload and generated a permanent live Pin ID accessible at <span className="font-mono text-rose-500">pinterest.com/pin/{'{id}'}</span>.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">3</span>
+                  <span>Target Board Assignment</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  Confirms the pin was placed in the exact Pinterest category board selected by the user, organizing campaigns neatly.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">4</span>
+                  <span>FTC Affiliate Disclosure (Optional / Compulsory)</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  If compulsory mode is ON, checks that disclosure wording is appended. If compulsory mode is OFF, passes verification cleanly in optional mode without error.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">5</span>
+                  <span>Vertical 1000×1500 (2:3) Creative Delivery</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  Verifies that the vertical commercial image was uploaded to Cloudinary CDN and delivered in full resolution.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">6</span>
+                  <span>SEO Title & Pinterest Search Tags</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  Confirms high-intent commercial keywords and hashtags are indexed, maximizing organic Pinterest search visibility.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-1 md:col-span-2">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center text-[11px] font-black">7</span>
+                  <span>Next Hourly Scheduled Pin Armed in 24/7 Queue</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 pl-7 text-[11px] leading-relaxed">
+                  Ensures the persistent Agenda background scheduler is active and has queued the subsequent hourly post. Even with your PC turned off, the queue triggers autonomously.
+                </p>
               </div>
             </div>
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">2.</span>
-              <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">Official Pinterest Pin ID Confirmation</span>
-                <span className="text-slate-500 dark:text-slate-400">Verifies that the Pinterest API v5 returned a live pin ID (`pinterest.com/pin/{id}`).</span>
-              </div>
-            </div>
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">3.</span>
-              <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">Target Pinterest Board Binding</span>
-                <span className="text-slate-500 dark:text-slate-400">Ensures the pin was placed in the selected board category.</span>
-              </div>
-            </div>
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">4.</span>
-              <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">FTC Affiliate Disclosure Clause</span>
-                <span className="text-slate-500 dark:text-slate-400">Checks for mandatory disclosure wording ("Affiliate link – I may earn a commission...").</span>
-              </div>
-            </div>
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">5.</span>
-              <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">Vertical 1000×1500 (2:3) Creative Delivery</span>
-                <span className="text-slate-500 dark:text-slate-400">Verifies that the high-resolution image loaded properly from Cloudinary CDN.</span>
-              </div>
-            </div>
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">6.</span>
-              <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">SEO Tags & Keywords Indexing</span>
-                <span className="text-slate-500 dark:text-slate-400">Ensures title is under 100 chars and high-volume Pinterest hashtags are attached.</span>
-              </div>
-            </div>
-            <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start gap-3">
-              <span className="font-bold text-emerald-600 text-sm">7.</span>
-              <div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 block">Next Scheduled Pin Armed</span>
-                <span className="text-slate-500 dark:text-slate-400">Verifies that the next hourly post is queued and active in the MongoDB scheduler.</span>
-              </div>
-            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <button
+              onClick={() => navigate('/generated-pins')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition"
+            >
+              <span>View All Pins in Generated Pins</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => setModalPin(currentSamplePin)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition active:scale-95"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Test Checklist Modal Now</span>
+            </button>
           </div>
         </div>
       )}
@@ -410,23 +729,51 @@ export const Instructions = () => {
           </div>
 
           <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-3">
               <div className="font-bold text-slate-800 dark:text-slate-100">
-                Mandatory Affiliate Disclosures:
+                Affiliate Disclosures: Optional by Default with Compulsory Button Support
               </div>
-              <p className="text-slate-500">
-                The FTC (Federal Trade Commission) and Pinterest require all pins with affiliate tracking links to clearly disclose the affiliate relationship.
+              <p className="text-slate-500 dark:text-slate-400">
+                Affiliate disclosures are <b>optional</b> in PinPilot AI. If your affiliate network or jurisdiction requires disclosure statements, you can turn ON the <b>Compulsory Disclosure</b> toggle button in Settings or while creating any individual campaign.
               </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
+                    ✓ When Compulsory Button is ON:
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed block">
+                    PinPilot automatically appends your customized disclosure statement to the end of every generated pin description.
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    ✕ When Compulsory Button is OFF:
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed block">
+                    Descriptions post cleanly without appending any disclosure text, giving you complete flexibility.
+                  </span>
+                </div>
+              </div>
+
               <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-semibold text-rose-600 dark:text-rose-400">
-                "Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you."
+                Default Statement: "Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you."
               </div>
               <p className="text-[11px] text-slate-400">
-                PinPilot AI automatically appends this statement to every generated description. You can customize the exact wording in Settings.
+                You can configure and customize the exact disclosure wording anytime in the <b className="text-slate-700 dark:text-slate-300">Settings</b> page under "Affiliate Compliance & Defaults".
               </p>
             </div>
           </div>
         </div>
       )}
+
+      {/* Interactive Post-Publish Checklist Modal */}
+      <PublishChecklistModal
+        isOpen={!!modalPin}
+        onClose={() => setModalPin(null)}
+        pin={modalPin}
+      />
     </div>
   );
 };

@@ -73,6 +73,14 @@ const campaignSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  appendAffiliateDisclosure: {
+    type: Boolean,
+    default: false, // Optional by default. When ON, disclosure is appended to descriptions.
+  },
+  affiliateDisclosureText: {
+    type: String,
+    default: '',
+  },
   rawExtractedData: {
     type: mongoose.Schema.Types.Mixed,
     default: {},

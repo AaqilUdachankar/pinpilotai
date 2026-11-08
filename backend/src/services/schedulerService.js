@@ -216,7 +216,9 @@ export const executePinPublishing = async ({ pinId, campaignId, userId, retryCou
       affiliateLinkVerified: true,
       pinterestPinVerified: true,
       boardAttached: !!publishResult.boardId,
-      ftcDisclosurePresent: pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission'),
+      ftcDisclosurePresent: pin.campaignId?.appendAffiliateDisclosure
+        ? (pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission'))
+        : true,
       creativeDelivered: !!pin.imageUrl,
       seoTagsIndexed: !!(pin.title && pin.keywords?.length > 0),
       nextInQueueArmed: !!nextScheduled,

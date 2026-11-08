@@ -18,55 +18,62 @@ export const PublishChecklistModal = ({ isOpen, onClose, pin }) => {
   if (!pin) return null;
 
   const checklist = pin.publishChecklist || {};
+  const hasDisclosure = pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission');
+  const isDisclosureOptional = pin.campaignId?.appendAffiliateDisclosure === false;
+  const ftcPassed = checklist.ftcDisclosurePresent !== undefined
+    ? checklist.ftcDisclosurePresent
+    : (hasDisclosure || isDisclosureOptional);
 
   const items = [
     {
       id: 'affiliateLinkVerified',
       label: 'Destination Affiliate Link Validated',
-      desc: `Pinned link points to: ${pin.affiliateUrl}`,
+      desc: `Pinned link points to: ${pin.affiliateUrl || 'Affiliate Destination Link'}`,
       passed: checklist.affiliateLinkVerified ?? !!pin.affiliateUrl,
       icon: Link,
     },
     {
       id: 'pinterestPinVerified',
       label: 'Official Pinterest API Confirmation',
-      desc: pin.pinterestPinId ? `Pinterest Pin ID #${pin.pinterestPinId}` : 'Awaiting publication trigger',
-      passed: pin.publishingStatus === 'published' && !!pin.pinterestPinId,
+      desc: pin.pinterestPinId ? `Pinterest Pin ID #${pin.pinterestPinId}` : (checklist.pinterestPinVerified ? 'Verified by Pinterest API' : 'Awaiting publication trigger'),
+      passed: checklist.pinterestPinVerified ?? (pin.publishingStatus === 'published' && !!pin.pinterestPinId),
       icon: Share2,
     },
     {
       id: 'boardAttached',
       label: 'Target Pinterest Board Assigned',
-      desc: pin.pinterestBoardId ? `Board ID: ${pin.pinterestBoardId}` : 'Assigned to campaign board',
-      passed: !!(pin.pinterestBoardId || pin.campaignId?.selectedBoard?.id),
+      desc: pin.pinterestBoardId ? `Board ID: ${pin.pinterestBoardId}` : (checklist.boardAttached ? 'Board assigned & verified' : 'Assigned to campaign board'),
+      passed: checklist.boardAttached ?? !!(pin.pinterestBoardId || pin.campaignId?.selectedBoard?.id || pin.boardName),
       icon: ShieldCheck,
     },
     {
       id: 'ftcDisclosurePresent',
-      label: 'FTC Affiliate Disclosure Included',
-      desc: 'Affiliate commission disclaimer present in pin description',
-      passed: pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission'),
+      label: hasDisclosure ? 'FTC Affiliate Disclosure Included' : 'FTC Affiliate Disclosure (Optional Mode)',
+      desc: hasDisclosure
+        ? 'Affiliate commission disclaimer present in pin description'
+        : 'Affiliate disclosure is optional (omitted by user configuration)',
+      passed: ftcPassed,
       icon: ShieldCheck,
     },
     {
       id: 'creativeDelivered',
       label: 'Vertical 1000×1500 Creative Delivered',
       desc: '2:3 Pinterest-spec commercial image uploaded & verified',
-      passed: !!pin.imageUrl,
+      passed: checklist.creativeDelivered ?? !!pin.imageUrl,
       icon: Image,
     },
     {
       id: 'seoTagsIndexed',
       label: 'SEO Title & Pinterest Keywords Indexed',
       desc: `${pin.keywords?.length || 0} Pinterest search tags attached`,
-      passed: !!(pin.title && pin.keywords?.length > 0),
+      passed: checklist.seoTagsIndexed ?? !!(pin.title && (pin.keywords?.length > 0 || pin.description)),
       icon: Tag,
     },
     {
       id: 'nextInQueueArmed',
       label: 'Next Hourly Scheduled Pin Armed',
       desc: '24/7 cloud scheduler queue active for subsequent post',
-      passed: true,
+      passed: checklist.nextInQueueArmed ?? (pin.publishingStatus === 'scheduled' || pin.publishingStatus === 'published'),
       icon: Clock,
     },
   ];

@@ -94,7 +94,12 @@ export const generateCampaignContent = async ({
   const apiKey = userApiKeys?.geminiApiKey || process.env.GEMINI_API_KEY;
   const openaiKey = userApiKeys?.openaiApiKey || process.env.OPENAI_API_KEY;
 
-  const disclosure = disclosureText || 'Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you.';
+  // Determine disclosure text (empty string when disclosure is optional/disabled)
+  const disclosure = (typeof disclosureText === 'string')
+    ? disclosureText.trim()
+    : (disclosureText === false || disclosureText === null)
+      ? ''
+      : 'Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you.';
 
   // Attempt Gemini API if available
   if (apiKey) {
@@ -199,7 +204,7 @@ Product Details:
 - Description: ${productDescription || ''}
 - Features: ${features?.join(', ') || 'N/A'}
 - Custom Instructions: ${customInstructions || 'None'}
-- Required Affiliate Disclosure: "${disclosure}"
+${disclosure ? `- Required Affiliate Disclosure: "${disclosure}" (must append at end of each description)` : '- Affiliate Disclosure: None requested. Do NOT append any affiliate disclosure clause.'}
 
 Generate exactly 10 distinct Pinterest Pin assets for this product, matching these 10 creative concepts:
 1. Product Showcase
@@ -217,7 +222,7 @@ For EACH of the 10 pins, provide:
 - conceptIndex (1 to 10)
 - conceptName
 - pinTitle (max 90 chars, engaging, SEO-optimized, highly clickable for Pinterest)
-- description (200-400 chars, SEO keywords, compelling hook, problem/solution, and include the exact disclosure: "${disclosure}")
+- description (200-400 chars, SEO keywords, compelling hook, problem/solution${disclosure ? `, and append this disclosure at the end: "${disclosure}"` : ''})
 - caption (short engaging text snippet)
 - callToAction (e.g. "Visit Site", "Shop Now", "Check Price")
 - keywords (array of 5-8 Pinterest search terms)
@@ -280,10 +285,10 @@ Category: ${category || 'Products'}
 Price: ${price || 'Check store'}
 Description: ${productDescription || ''}
 Features: ${features?.join(', ') || 'N/A'}
-Required Affiliate Disclosure: "${disclosure}"
+${disclosure ? `Required Affiliate Disclosure: "${disclosure}" (must append to description)` : 'Affiliate Disclosure: None requested. Do not append any disclosure clause.'}
 
 Return strictly a JSON object with a "pins" array of 10 items.
-Each item must have: conceptIndex (1-10), conceptName, pinTitle, description (including "${disclosure}"), caption, callToAction, keywords (array), hashtags (array), imagePrompt (for vertical 2:3 Pinterest commercial photo).`;
+Each item must have: conceptIndex (1-10), conceptName, pinTitle, description${disclosure ? ` (including "${disclosure}")` : ''}, caption, callToAction, keywords (array), hashtags (array), imagePrompt (for vertical 2:3 Pinterest commercial photo).`;
 
   const res = await axios.post(
     'https://api.openai.com/v1/chat/completions',
@@ -347,65 +352,67 @@ const generateDeterministicContent = ({
     let caption = '';
     let callToAction = 'Visit Site';
 
+    const discSuffix = disclosure ? ` ${disclosure.trim()}` : '';
+
     switch (concept.index) {
       case 1:
         title = `The Ultimate ${brandPrefix}${cleanName} Showcase & Review`;
-        description = `Discover why the ${brandPrefix}${cleanName} is catching everyone's attention. Sleek design, reliable performance, and exceptional value in one package. Tap to explore specs and current availability. ${disclosure}`;
+        description = `Discover why the ${brandPrefix}${cleanName} is catching everyone's attention. Sleek design, reliable performance, and exceptional value in one package. Tap to explore specs and current availability.${discSuffix}`;
         caption = `Take a closer look at the ${cleanName}.`;
         callToAction = 'Visit Site';
         break;
       case 2:
         title = `Top Features of the ${cleanName} You Should Know`;
-        description = `From its standout craftsmanship to its intuitive functionality, here are the top features of the ${cleanName}. Everything you need to decide if it's right for you. ${disclosure}`;
+        description = `From its standout craftsmanship to its intuitive functionality, here are the top features of the ${cleanName}. Everything you need to decide if it's right for you.${discSuffix}`;
         caption = `The standout features that make all the difference.`;
         callToAction = 'Check Features';
         break;
       case 3:
         title = `Why You Should Consider the ${cleanName} Today`;
-        description = `Searching for a reliable ${cat}? See the key reasons shoppers love the ${cleanName} and why it could be your best purchase this season. ${disclosure}`;
+        description = `Searching for a reliable ${cat}? See the key reasons shoppers love the ${cleanName} and why it could be your best purchase this season.${discSuffix}`;
         caption = `Is the ${cleanName} worth it? Find out here.`;
         callToAction = 'Learn More';
         break;
       case 4:
         title = `How the ${cleanName} Upgrades Your Daily Routine`;
-        description = `Experience greater convenience and comfort with the ${cleanName}. Built to elevate your lifestyle with premium quality. Check the latest price and details now. ${disclosure}`;
+        description = `Experience greater convenience and comfort with the ${cleanName}. Built to elevate your lifestyle with premium quality. Check the latest price and details now.${discSuffix}`;
         caption = `Upgrade your daily life with this simple addition.`;
         callToAction = 'Shop Now';
         break;
       case 5:
         title = `${cleanName}: How It Compares to the Competition`;
-        description = `Looking at alternatives for your next ${cat}? Here is our breakdown of how the ${cleanName} outperforms standard options in quality and price. ${disclosure}`;
+        description = `Looking at alternatives for your next ${cat}? Here is our breakdown of how the ${cleanName} outperforms standard options in quality and price.${discSuffix}`;
         caption = `Compare specs and see why it stands out.`;
         callToAction = 'Compare Now';
         break;
       case 6:
         title = `Best Features Explained: ${cleanName} Breakdown`;
-        description = `A detailed look at the core specs and capabilities of the ${cleanName}. Discover what sets it apart before you buy. Click to view full details. ${disclosure}`;
+        description = `A detailed look at the core specs and capabilities of the ${cleanName}. Discover what sets it apart before you buy. Click to view full details.${discSuffix}`;
         caption = `Deep dive into the specs and real-world performance.`;
         callToAction = 'Read Review';
         break;
       case 7:
         title = `Minimalist & Aesthetic: The ${cleanName} Design`;
-        description = `Clean aesthetics meet high utility. The ${cleanName} seamlessly fits any modern aesthetic or curated collection. Click through to view more. ${disclosure}`;
+        description = `Clean aesthetics meet high utility. The ${cleanName} seamlessly fits any modern aesthetic or curated collection. Click through to view more.${discSuffix}`;
         caption = `Clean, minimal, and beautifully designed.`;
         callToAction = 'View Details';
         break;
       case 8:
         title = `The ${cleanName} in Everyday Life: Real Experience`;
-        description = `Wondering how the ${cleanName} looks and feels in everyday use? See authentic impressions and explore the product page for customer feedback. ${disclosure}`;
+        description = `Wondering how the ${cleanName} looks and feels in everyday use? See authentic impressions and explore the product page for customer feedback.${discSuffix}`;
         caption = `Real world aesthetics and everyday performance.`;
         callToAction = 'Visit Store';
         break;
       case 9:
         title = `Top Reasons the ${cleanName} Is Worth Every Penny`;
-        description = `Looking for the best value? Here is our curated list of reasons the ${cleanName} earns a spot on your wishlist. Tap for latest deals and shipping info. ${disclosure}`;
+        description = `Looking for the best value? Here is our curated list of reasons the ${cleanName} earns a spot on your wishlist. Tap for latest deals and shipping info.${discSuffix}`;
         caption = `Why everyone is talking about this product.`;
         callToAction = 'Check Price';
         break;
       case 10:
       default:
         title = `Our Definitive Recommendation: ${cleanName}`;
-        description = `The final verdict is in: the ${cleanName} delivers on its promises. Tap to read the complete breakdown and grab yours directly from the verified vendor. ${disclosure}`;
+        description = `The final verdict is in: the ${cleanName} delivers on its promises. Tap to read the complete breakdown and grab yours directly from the verified vendor.${discSuffix}`;
         caption = `Our top recommended pick for you.`;
         callToAction = 'Get Yours';
         break;

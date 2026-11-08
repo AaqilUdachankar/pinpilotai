@@ -105,6 +105,8 @@ export const createCampaign = async (req, res) => {
       imageStyle = 'commercial-product-aesthetic',
       customInstructions = '',
       referenceImages = [],
+      appendAffiliateDisclosure,
+      affiliateDisclosureText,
     } = req.body;
 
     if (!affiliateUrl || !productName) {
@@ -113,6 +115,15 @@ export const createCampaign = async (req, res) => {
         message: 'Product name and affiliate URL are required to create a campaign.',
       });
     }
+
+    // Determine affiliate disclosure setting (Optional by default; compulsory when toggled ON)
+    const shouldAppendDisclosure = appendAffiliateDisclosure !== undefined
+      ? Boolean(appendAffiliateDisclosure)
+      : Boolean(req.user.settings?.enableAffiliateDisclosure);
+
+    const activeDisclosureText = shouldAppendDisclosure
+      ? (affiliateDisclosureText || req.user.settings?.defaultAffiliateDisclosure || 'Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you.')
+      : '';
 
     // Determine Start Date (Auto-chain detection if requested or selected)
     let calculatedStartDate = startDate ? new Date(startDate) : new Date();
@@ -159,6 +170,8 @@ export const createCampaign = async (req, res) => {
       campaignStatus: 'generating',
       imageStyle,
       customInstructions,
+      appendAffiliateDisclosure: shouldAppendDisclosure,
+      affiliateDisclosureText: activeDisclosureText,
       generationProgress: {
         step: 'analyzing',
         percentage: 15,
@@ -200,6 +213,8 @@ export const createCampaign = async (req, res) => {
         selectedBoard: campaign.selectedBoard,
         customInstructions,
         referenceImages,
+        appendAffiliateDisclosure: shouldAppendDisclosure,
+        affiliateDisclosureText: activeDisclosureText,
       },
       user: req.user,
     }).catch(async (pipelineErr) => {
@@ -240,7 +255,9 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
     affiliateUrl: campaignData.affiliateUrl,
     customInstructions: campaignData.customInstructions,
     userApiKeys: user.apiKeys,
-    disclosureText: user.settings?.defaultAffiliateDisclosure,
+    disclosureText: campaignData.appendAffiliateDisclosure
+      ? (campaignData.affiliateDisclosureText || user.settings?.defaultAffiliateDisclosure)
+      : '',
   });
 
   const selectedPinsContent = pinsContent.slice(0, campaignData.totalPins || 10);
@@ -307,7 +324,9 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
         affiliateLinkVerified: !!campaignData.affiliateUrl,
         pinterestPinVerified: false,
         boardAttached: !!(campaignData.selectedBoard?.id),
-        ftcDisclosurePresent: pinData.description?.toLowerCase().includes('affiliate') || pinData.description?.toLowerCase().includes('commission'),
+        ftcDisclosurePresent: campaignData.appendAffiliateDisclosure
+          ? (pinData.description?.toLowerCase().includes('affiliate') || pinData.description?.toLowerCase().includes('commission'))
+          : true,
         creativeDelivered: !!pinData.imageUrl,
         seoTagsIndexed: !!(pinData.pinTitle && pinData.keywords?.length > 0),
         nextInQueueArmed: true,

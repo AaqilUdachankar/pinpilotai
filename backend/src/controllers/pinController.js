@@ -61,21 +61,26 @@ export const getPinChecklist = async (req, res) => {
     const pin = await Pin.findOne({
       _id: req.params.id,
       userId: req.user._id,
-    }).populate('campaignId', 'campaignName productName');
+    }).populate('campaignId', 'campaignName productName appendAffiliateDisclosure');
 
     if (!pin) {
       return res.status(404).json({ success: false, message: 'Pin not found.' });
     }
 
-    const checklist = pin.publishChecklist || {
-      affiliateLinkVerified: !!pin.affiliateUrl,
-      pinterestPinVerified: !!pin.pinterestPinId,
-      boardAttached: !!pin.pinterestBoardId,
-      ftcDisclosurePresent: pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission'),
-      creativeDelivered: !!pin.imageUrl,
-      seoTagsIndexed: !!(pin.title && pin.keywords?.length > 0),
-      nextInQueueArmed: false,
-      status: pin.publishingStatus === 'published' ? 'passed' : pin.publishingStatus === 'failed' ? 'failed' : 'pending',
+    const hasDisclosure = pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission');
+    const isDisclosureRequired = pin.campaignId?.appendAffiliateDisclosure ?? req.user.settings?.enableAffiliateDisclosure ?? false;
+    const ftcCheckPassed = isDisclosureRequired ? hasDisclosure : true;
+
+    const checklist = {
+      affiliateLinkVerified: pin.publishChecklist?.affiliateLinkVerified ?? !!pin.affiliateUrl,
+      pinterestPinVerified: pin.publishChecklist?.pinterestPinVerified ?? !!pin.pinterestPinId,
+      boardAttached: pin.publishChecklist?.boardAttached ?? !!pin.pinterestBoardId,
+      ftcDisclosurePresent: ftcCheckPassed,
+      creativeDelivered: pin.publishChecklist?.creativeDelivered ?? !!pin.imageUrl,
+      seoTagsIndexed: pin.publishChecklist?.seoTagsIndexed ?? !!(pin.title && pin.keywords?.length > 0),
+      nextInQueueArmed: pin.publishChecklist?.nextInQueueArmed ?? (pin.publishingStatus === 'scheduled'),
+      status: pin.publishChecklist?.status || (pin.publishingStatus === 'published' ? 'passed' : pin.publishingStatus === 'failed' ? 'failed' : 'pending'),
+      notes: pin.publishChecklist?.notes || '',
     };
 
     res.json({
@@ -281,7 +286,9 @@ export const regeneratePinContent = async (req, res) => {
       affiliateUrl: pin.affiliateUrl,
       customInstructions: req.body?.instructions || '',
       userApiKeys: req.user.apiKeys,
-      disclosureText: req.user.settings?.defaultAffiliateDisclosure,
+      disclosureText: (campaign?.appendAffiliateDisclosure ?? req.user.settings?.enableAffiliateDisclosure)
+        ? (campaign?.affiliateDisclosureText || req.user.settings?.defaultAffiliateDisclosure)
+        : '',
     });
 
     const matchingConcept = content.find((c) => c.conceptIndex === pin.conceptIndex) || content[0];

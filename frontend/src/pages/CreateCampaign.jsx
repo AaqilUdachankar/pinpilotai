@@ -44,6 +44,13 @@ export const CreateCampaign = () => {
   const [selectedBoardId, setSelectedBoardId] = useState('');
   const [imageStyle, setImageStyle] = useState('commercial-product-aesthetic');
   const [customInstructions, setCustomInstructions] = useState('');
+  const [appendDisclosure, setAppendDisclosure] = useState(
+    user?.settings?.enableAffiliateDisclosure ?? false
+  );
+  const [disclosureText, setDisclosureText] = useState(
+    user?.settings?.defaultAffiliateDisclosure ||
+      'Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you.'
+  );
 
   // Boards
   const [boards, setBoards] = useState([]);
@@ -191,6 +198,8 @@ export const CreateCampaign = () => {
         selectedBoard: chosenBoard ? { id: chosenBoard.id, name: chosenBoard.name } : null,
         imageStyle,
         customInstructions,
+        appendAffiliateDisclosure: appendDisclosure,
+        affiliateDisclosureText: appendDisclosure ? disclosureText : '',
         referenceImages: extractedData?.images || [],
       };
 
@@ -545,6 +554,58 @@ export const CreateCampaign = () => {
               placeholder="e.g. Focus on battery life and student discounts; keep descriptions casual and enthusiastic."
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-rose-500 focus:outline-none"
             />
+          </div>
+
+          {/* Affiliate Disclosure & Compliance Setting */}
+          <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                    Affiliate Disclosure
+                  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    appendDisclosure
+                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                  }`}>
+                    {appendDisclosure ? 'Compulsory (Active: Posting text)' : 'Optional (Disabled: No text)'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Disclosure is optional. Turn this button ON if you want disclosure text appended to all 10 pins.
+                </p>
+              </div>
+
+              {/* Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setAppendDisclosure(!appendDisclosure)}
+                className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  appendDisclosure ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+                role="switch"
+                aria-checked={appendDisclosure}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    appendDisclosure ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {appendDisclosure && (
+              <div className="pt-2">
+                <input
+                  type="text"
+                  value={disclosureText}
+                  onChange={(e) => setDisclosureText(e.target.value)}
+                  placeholder="e.g. Affiliate link – I may earn a commission from qualifying purchases."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                />
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}
