@@ -12,6 +12,7 @@ import { GeneratedPins } from './pages/GeneratedPins';
 import { PublishingCalendar } from './pages/PublishingCalendar';
 import { PinterestAccounts } from './pages/PinterestAccounts';
 import { Analytics } from './pages/Analytics';
+import { Instructions } from './pages/Instructions';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -64,6 +65,7 @@ export default function App() {
                 <Route path="/calendar" element={<PublishingCalendar />} />
                 <Route path="/pinterest-accounts" element={<PinterestAccounts />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/instructions" element={<Instructions />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
 

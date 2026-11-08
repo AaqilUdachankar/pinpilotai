@@ -34,6 +34,22 @@ const userSchema = new mongoose.Schema({
     pinterestClientId: { type: String, default: '' },
     pinterestClientSecret: { type: String, default: '' },
   },
+  // AI API Usage & Quota Tracking
+  apiUsage: {
+    gemini: {
+      requestsCount: { type: Number, default: 0 },
+      tokensUsed: { type: Number, default: 0 },
+      limitRequests: { type: Number, default: 1500 }, // Standard daily RPM/quota baseline
+      lastUsedAt: { type: Date, default: null },
+    },
+    openai: {
+      requestsCount: { type: Number, default: 0 },
+      tokensUsed: { type: Number, default: 0 },
+      limitRequests: { type: Number, default: 1000 },
+      estimatedCostUsd: { type: Number, default: 0 },
+      lastUsedAt: { type: Date, default: null },
+    },
+  },
   settings: {
     defaultAffiliateDisclosure: {
       type: String,
@@ -50,6 +66,10 @@ const userSchema = new mongoose.Schema({
     timezone: {
       type: String,
       default: 'UTC',
+    },
+    autoChainCampaigns: {
+      type: Boolean,
+      default: true,
     },
   },
 }, {

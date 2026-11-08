@@ -101,6 +101,19 @@ const pinSchema = new mongoose.Schema({
     metricsAvailable: { type: Boolean, default: false },
     lastFetchedAt: { type: Date, default: null },
   },
+  // Verification Checklist After Each Publish
+  publishChecklist: {
+    affiliateLinkVerified: { type: Boolean, default: false },
+    pinterestPinVerified: { type: Boolean, default: false },
+    boardAttached: { type: Boolean, default: false },
+    ftcDisclosurePresent: { type: Boolean, default: false },
+    creativeDelivered: { type: Boolean, default: false },
+    seoTagsIndexed: { type: Boolean, default: false },
+    nextInQueueArmed: { type: Boolean, default: false },
+    verifiedAt: { type: Date, default: null },
+    status: { type: String, default: 'pending' }, // pending, passed, warning, failed
+    notes: { type: String, default: '' },
+  },
 }, {
   timestamps: true,
 });

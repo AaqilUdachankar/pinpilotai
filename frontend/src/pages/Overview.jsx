@@ -14,18 +14,25 @@ import {
   Share2,
   Calendar as CalendarIcon,
   Activity,
-  ExternalLink
+  FileSpreadsheet,
+  Download,
+  ClipboardCheck
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { analyticsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from '../components/Common/Badge';
+import { ApiUsageBar } from '../components/Common/ApiUsageBar';
+import { ExportModal } from '../components/Common/ExportModal';
+import { PublishChecklistModal } from '../components/Pin/PublishChecklistModal';
 
 export const Overview = () => {
   const navigate = useNavigate();
   const { pinterestAccount } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [checklistPin, setChecklistPin] = useState(null);
 
   const fetchOverview = async () => {
     try {
@@ -112,17 +119,20 @@ export const Overview = () => {
 
   return (
     <div className="space-y-6">
+      {/* AI API Limit & Progress Bar */}
+      <ApiUsageBar compact />
+
       {/* Hero Welcome Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-rose-900/40">
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-400/30 text-rose-300 text-xs font-semibold mb-3">
-            <Sparkles className="w-3.5 h-3.5" /> Autonomous Affiliate Automation
+            <Sparkles className="w-3.5 h-3.5" /> Autonomous 24/7 Affiliate Stacking
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Turn Any Affiliate Link Into 10 Viral Pinterest Pins
           </h2>
           <p className="text-slate-300 text-sm mt-2 leading-relaxed">
-            Paste your affiliate product URL, and PinPilot AI will scrape the product, design 10 vertical 1000×1500 commercial visuals, craft SEO copy, and automatically publish on an hourly schedule 24/7.
+            Auto-scrape product details, create 10 unique vertical 1000×1500 commercial visuals, craft SEO copy, and automatically publish on an hourly schedule 24/7 with consecutive campaign auto-chaining.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
@@ -130,6 +140,12 @@ export const Overview = () => {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-lg shadow-rose-600/30 transition active:scale-95"
             >
               <PlusCircle className="w-4 h-4" /> Create New Campaign
+            </button>
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur-md transition"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export Excel / Google Sheets
             </button>
             {!pinterestAccount?.isConnected && (
               <button
@@ -142,7 +158,6 @@ export const Overview = () => {
           </div>
         </div>
 
-        {/* Decorative background glow */}
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-gradient-to-l from-rose-600/10 to-transparent pointer-events-none" />
       </div>
 
@@ -233,13 +248,22 @@ export const Overview = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                        {new Date(pin.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="text-right shrink-0 flex items-center gap-3">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                          {new Date(pin.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {new Date(pin.scheduledAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-400">
-                        {new Date(pin.scheduledAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                      </div>
+                      <button
+                        onClick={() => setChecklistPin(pin)}
+                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-500 transition"
+                        title="View Checklist"
+                      >
+                        <ClipboardCheck className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -365,6 +389,19 @@ export const Overview = () => {
           </div>
         )}
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
+
+      {/* Checklist Modal */}
+      <PublishChecklistModal
+        isOpen={!!checklistPin}
+        onClose={() => setChecklistPin(null)}
+        pin={checklistPin}
+      />
     </div>
   );
 };

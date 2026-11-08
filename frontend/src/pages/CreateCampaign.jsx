@@ -14,13 +14,16 @@ import {
   DollarSign,
   Tag,
   ArrowRight,
-  Loader2
+  Loader2,
+  Zap,
+  Repeat
 } from 'lucide-react';
 import { campaignAPI, pinterestAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Common/Toast';
 import { ManualProductModal } from '../components/Campaign/ManualProductModal';
 import { GenerationProgress } from '../components/Campaign/GenerationProgress';
+import { ApiUsageBar } from '../components/Common/ApiUsageBar';
 
 export const CreateCampaign = () => {
   const { user, pinterestAccount } = useAuth();
@@ -35,7 +38,9 @@ export const CreateCampaign = () => {
   const [campaignName, setCampaignName] = useState('');
   const [totalPins, setTotalPins] = useState(10);
   const [publishingInterval, setPublishingInterval] = useState(60); // minutes
+  const [scheduleMode, setScheduleMode] = useState('autochain'); // 'autochain' | 'custom'
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 16));
+  const [nextSlotInfo, setNextSlotInfo] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState('');
   const [imageStyle, setImageStyle] = useState('commercial-product-aesthetic');
   const [customInstructions, setCustomInstructions] = useState('');
@@ -47,6 +52,28 @@ export const CreateCampaign = () => {
   // Generation state
   const [createdCampaign, setCreatedCampaign] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch next available start time for auto-chaining
+  const fetchNextSlot = async (interval = 60) => {
+    try {
+      const res = await campaignAPI.getNextSlot(interval);
+      if (res.data?.success) {
+        setNextSlotInfo(res.data);
+        if (res.data.nextAvailableDate) {
+          const dateStr = new Date(res.data.nextAvailableDate).toISOString().slice(0, 16);
+          if (scheduleMode === 'autochain') {
+            setStartDate(dateStr);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to detect next slot:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNextSlot(publishingInterval);
+  }, [publishingInterval, scheduleMode]);
 
   // Fetch connected Pinterest boards
   useEffect(() => {
@@ -157,7 +184,10 @@ export const CreateCampaign = () => {
         price: extractedData?.price || '',
         totalPins: Number(totalPins) || 10,
         publishingInterval: Number(publishingInterval) || 60,
-        startDate: new Date(startDate).toISOString(),
+        startDate: scheduleMode === 'autochain' && nextSlotInfo?.nextAvailableDate
+          ? new Date(nextSlotInfo.nextAvailableDate).toISOString()
+          : new Date(startDate).toISOString(),
+        autoChain: scheduleMode === 'autochain',
         selectedBoard: chosenBoard ? { id: chosenBoard.id, name: chosenBoard.name } : null,
         imageStyle,
         customInstructions,
@@ -176,7 +206,6 @@ export const CreateCampaign = () => {
     }
   };
 
-  // If campaign is actively generating or completed, show the live progress screen
   if (createdCampaign) {
     return (
       <div className="py-6">
@@ -187,15 +216,20 @@ export const CreateCampaign = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Page Header */}
-      <div>
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-          Create Pinterest Affiliate Campaign
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Paste a single affiliate product URL. The system will extract product details, generate 10 unique vertical commercial designs, write SEO descriptions, and schedule them 24/7.
-        </p>
+      {/* Header & AI Quota Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Create Pinterest Affiliate Campaign
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Paste a product affiliate URL. Auto-scrapes specs, generates 10 unique commercial designs, and auto-queues 24/7.
+          </p>
+        </div>
       </div>
+
+      {/* AI Limit & Quota Monitor */}
+      <ApiUsageBar compact />
 
       {/* Main Affiliate Submission Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
@@ -329,6 +363,53 @@ export const CreateCampaign = () => {
 
         {/* Campaign Settings Form */}
         <form onSubmit={handleGenerateCampaign} className="p-6 sm:p-8 space-y-6">
+          {/* Smart Auto-Chain & Queue Stacking Banner */}
+          <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="font-bold text-xs text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
+                  Automatic Campaign Stacking (Consecutive 24/7 Publishing)
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
+                10-Post Stacking Protocol
+              </span>
+            </div>
+
+            <p className="text-xs text-indigo-800/80 dark:text-indigo-300 mb-3 leading-relaxed">
+              {nextSlotInfo?.hasQueuedCampaign
+                ? `⚡ Auto-detected previous campaign "${nextSlotInfo.previousCampaignName}". Its 10th post finishes at ${new Date(nextSlotInfo.lastScheduledPinTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. This campaign will automatically start on the 11th hour at ${new Date(nextSlotInfo.nextAvailableDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, posting 1 pin every hour consecutively!`
+                : `⚡ No active pins in queue. This campaign will start fresh and post 1 pin every hour consecutively.`}
+            </p>
+
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-indigo-100 cursor-pointer">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  value="autochain"
+                  checked={scheduleMode === 'autochain'}
+                  onChange={() => setScheduleMode('autochain')}
+                  className="text-rose-600 focus:ring-rose-500"
+                />
+                <span>Auto-Chain After Previous Campaign (Recommended)</span>
+              </label>
+
+              <label className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-indigo-100 cursor-pointer">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  value="custom"
+                  checked={scheduleMode === 'custom'}
+                  onChange={() => setScheduleMode('custom')}
+                  className="text-rose-600 focus:ring-rose-500"
+                />
+                <span>Custom Start Time</span>
+              </label>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Campaign Name */}
             <div>
@@ -412,13 +493,23 @@ export const CreateCampaign = () => {
 
             {/* Start Date & Time */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Publishing Start Date & Time
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Publishing Start Date & Time
+                </label>
+                {scheduleMode === 'autochain' && (
+                  <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded">
+                    Auto-Calculated
+                  </span>
+                )}
+              </div>
               <input
                 type="datetime-local"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setScheduleMode('custom');
+                }}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-rose-500 focus:outline-none"
               />

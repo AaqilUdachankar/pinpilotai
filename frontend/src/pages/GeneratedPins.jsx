@@ -7,12 +7,17 @@ import {
   Sparkles,
   RefreshCw,
   Clock,
-  Layers
+  Layers,
+  FileSpreadsheet,
+  Download,
+  ClipboardCheck
 } from 'lucide-react';
 import { pinAPI, campaignAPI } from '../services/api';
 import { PinCard } from '../components/Pin/PinCard';
 import { PinEditModal } from '../components/Pin/PinEditModal';
 import { RescheduleModal } from '../components/Pin/RescheduleModal';
+import { PublishChecklistModal } from '../components/Pin/PublishChecklistModal';
+import { ExportModal } from '../components/Common/ExportModal';
 import { useToast } from '../components/Common/Toast';
 
 export const GeneratedPins = () => {
@@ -31,6 +36,8 @@ export const GeneratedPins = () => {
   // Modals state
   const [editingPin, setEditingPin] = useState(null);
   const [reschedulingPin, setReschedulingPin] = useState(null);
+  const [checklistPin, setChecklistPin] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const fetchPins = async () => {
     setLoading(true);
@@ -112,8 +119,9 @@ export const GeneratedPins = () => {
     try {
       const res = await pinAPI.publishNow(pin._id);
       if (res.data?.success) {
-        addToast('Pin published successfully to Pinterest!', 'success');
+        addToast('Pin published successfully to Pinterest! View checklist for verification.', 'success');
         fetchPins();
+        setChecklistPin(res.data.pin);
       }
     } catch (err) {
       addToast(err.response?.data?.message || 'Pinterest publishing failed. Check error details.', 'error', 6000);
@@ -161,27 +169,38 @@ export const GeneratedPins = () => {
             Generated Pinterest Pins
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Preview, customize, and manage all 10 AI-generated vertical pins for your affiliate campaigns.
+            Preview, customize, and audit all 10 AI-generated vertical pins for your affiliate campaigns.
           </p>
         </div>
 
-        {/* Campaign Selector Dropdown */}
-        <div className="w-full sm:w-72">
-          <select
-            value={selectedCampaignId}
-            onChange={(e) => {
-              setSelectedCampaignId(e.target.value);
-              setSearchParams(e.target.value ? { campaignId: e.target.value } : {});
-            }}
-            className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+        {/* Top Action Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 transition shadow-sm"
           >
-            <option value="">All Campaigns</option>
-            {campaigns.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.campaignName}
-              </option>
-            ))}
-          </select>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Export to Excel / Google Sheets</span>
+          </button>
+
+          {/* Campaign Selector Dropdown */}
+          <div className="w-full sm:w-64">
+            <select
+              value={selectedCampaignId}
+              onChange={(e) => {
+                setSelectedCampaignId(e.target.value);
+                setSearchParams(e.target.value ? { campaignId: e.target.value } : {});
+              }}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <option value="">All Campaigns</option>
+              {campaigns.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.campaignName}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -227,6 +246,7 @@ export const GeneratedPins = () => {
               onPublishNow={handlePublishNow}
               onReschedule={(p) => setReschedulingPin(p)}
               onDelete={handleDelete}
+              onViewChecklist={(p) => setChecklistPin(p)}
             />
           ))}
         </div>
@@ -246,6 +266,20 @@ export const GeneratedPins = () => {
         onClose={() => setReschedulingPin(null)}
         pin={reschedulingPin}
         onReschedule={handleReschedule}
+      />
+
+      {/* Post-Publish Verification Checklist Modal */}
+      <PublishChecklistModal
+        isOpen={!!checklistPin}
+        onClose={() => setChecklistPin(null)}
+        pin={checklistPin}
+      />
+
+      {/* Excel / Google Sheets Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        campaignId={selectedCampaignId}
       />
     </div>
   );

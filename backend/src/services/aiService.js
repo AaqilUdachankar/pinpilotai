@@ -1,4 +1,5 @@
 import axios from 'axios';
+import User from '../models/User.js';
 import { logger } from '../utils/logger.js';
 
 // The 10 standard required creative concepts
@@ -76,6 +77,7 @@ export const CREATIVE_CONCEPTS = [
 ];
 
 export const generateCampaignContent = async ({
+  userId,
   productName,
   productDescription,
   brand,
@@ -92,12 +94,12 @@ export const generateCampaignContent = async ({
   const apiKey = userApiKeys?.geminiApiKey || process.env.GEMINI_API_KEY;
   const openaiKey = userApiKeys?.openaiApiKey || process.env.OPENAI_API_KEY;
 
-  const disclosure = disclosureText || 'Affiliate link – I may earn a commission from qualifying purchases.';
+  const disclosure = disclosureText || 'Affiliate link – I may earn a commission from qualifying purchases at no extra cost to you.';
 
   // Attempt Gemini API if available
   if (apiKey) {
     try {
-      return await generateWithGemini({
+      const pins = await generateWithGemini({
         apiKey,
         productName,
         productDescription,
@@ -108,6 +110,11 @@ export const generateCampaignContent = async ({
         customInstructions,
         disclosure,
       });
+
+      if (userId) {
+        await recordApiUsage(userId, 'gemini', 1, 1200);
+      }
+      return pins;
     } catch (err) {
       logger.warn(`Gemini API generation failed: ${err.message}. Trying OpenAI or fallback...`);
     }
@@ -116,7 +123,7 @@ export const generateCampaignContent = async ({
   // Attempt OpenAI API if available
   if (openaiKey) {
     try {
-      return await generateWithOpenAI({
+      const pins = await generateWithOpenAI({
         apiKey: openaiKey,
         productName,
         productDescription,
@@ -127,9 +134,19 @@ export const generateCampaignContent = async ({
         customInstructions,
         disclosure,
       });
+
+      if (userId) {
+        await recordApiUsage(userId, 'openai', 1, 1400);
+      }
+      return pins;
     } catch (err) {
       logger.warn(`OpenAI API generation failed: ${err.message}. Using built-in generator...`);
     }
+  }
+
+  // If using built-in engine, still record usage in user's free tier counter
+  if (userId) {
+    await recordApiUsage(userId, 'gemini', 1, 800);
   }
 
   // Built-in intelligent synthesis generator
@@ -143,6 +160,23 @@ export const generateCampaignContent = async ({
     customInstructions,
     disclosure,
   });
+};
+
+const recordApiUsage = async (userId, provider, requests = 1, tokens = 1000) => {
+  try {
+    const incField = provider === 'gemini' ? 'apiUsage.gemini' : 'apiUsage.openai';
+    await User.findByIdAndUpdate(userId, {
+      $inc: {
+        [`${incField}.requestsCount`]: requests,
+        [`${incField}.tokensUsed`]: tokens,
+      },
+      $set: {
+        [`${incField}.lastUsedAt`]: new Date(),
+      },
+    });
+  } catch (e) {
+    logger.warn(`Could not update API usage for user ${userId}:`, e.message);
+  }
 };
 
 const generateWithGemini = async ({

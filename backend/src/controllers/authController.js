@@ -100,6 +100,51 @@ export const getMe = async (req, res) => {
   }
 };
 
+/**
+ * Returns Gemini & OpenAI API Usage & Limit progress data
+ */
+export const getApiUsage = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const usage = user.apiUsage || {
+      gemini: { requestsCount: 0, tokensUsed: 0, limitRequests: 1500 },
+      openai: { requestsCount: 0, tokensUsed: 0, limitRequests: 1000 },
+    };
+
+    const geminiReq = usage.gemini?.requestsCount || 0;
+    const geminiLimit = usage.gemini?.limitRequests || 1500;
+    const geminiPct = Math.min(Math.round((geminiReq / geminiLimit) * 100), 100);
+
+    const openaiReq = usage.openai?.requestsCount || 0;
+    const openaiLimit = usage.openai?.limitRequests || 1000;
+    const openaiPct = Math.min(Math.round((openaiReq / openaiLimit) * 100), 100);
+
+    res.json({
+      success: true,
+      gemini: {
+        requestsCount: geminiReq,
+        tokensUsed: usage.gemini?.tokensUsed || 0,
+        limitRequests: geminiLimit,
+        percentage: geminiPct,
+        remaining: Math.max(geminiLimit - geminiReq, 0),
+        status: geminiPct > 90 ? 'critical' : geminiPct > 70 ? 'warning' : 'healthy',
+        hasCustomKey: !!user.apiKeys?.geminiApiKey,
+      },
+      openai: {
+        requestsCount: openaiReq,
+        tokensUsed: usage.openai?.tokensUsed || 0,
+        limitRequests: openaiLimit,
+        percentage: openaiPct,
+        remaining: Math.max(openaiLimit - openaiReq, 0),
+        status: openaiPct > 90 ? 'critical' : openaiPct > 70 ? 'warning' : 'healthy',
+        hasCustomKey: !!user.apiKeys?.openaiApiKey,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const updateSettings = async (req, res) => {
   try {
     const { settings, apiKeys } = req.body;

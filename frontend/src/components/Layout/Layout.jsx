@@ -23,6 +23,8 @@ export const Layout = () => {
         return 'Pinterest Business Accounts';
       case '/analytics':
         return 'Performance Analytics';
+      case '/instructions':
+        return 'User Guide & Instructions';
       case '/settings':
         return 'Platform Settings';
       default:

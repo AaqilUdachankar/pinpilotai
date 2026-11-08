@@ -53,6 +53,119 @@ export const getPinById = async (req, res) => {
   }
 };
 
+/**
+ * Returns detailed post-publish verification checklist
+ */
+export const getPinChecklist = async (req, res) => {
+  try {
+    const pin = await Pin.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    }).populate('campaignId', 'campaignName productName');
+
+    if (!pin) {
+      return res.status(404).json({ success: false, message: 'Pin not found.' });
+    }
+
+    const checklist = pin.publishChecklist || {
+      affiliateLinkVerified: !!pin.affiliateUrl,
+      pinterestPinVerified: !!pin.pinterestPinId,
+      boardAttached: !!pin.pinterestBoardId,
+      ftcDisclosurePresent: pin.description?.toLowerCase().includes('affiliate') || pin.description?.toLowerCase().includes('commission'),
+      creativeDelivered: !!pin.imageUrl,
+      seoTagsIndexed: !!(pin.title && pin.keywords?.length > 0),
+      nextInQueueArmed: false,
+      status: pin.publishingStatus === 'published' ? 'passed' : pin.publishingStatus === 'failed' ? 'failed' : 'pending',
+    };
+
+    res.json({
+      success: true,
+      pinId: pin._id,
+      pinTitle: pin.title,
+      status: pin.publishingStatus,
+      checklist,
+      affiliateUrl: pin.affiliateUrl,
+      pinterestPinId: pin.pinterestPinId,
+      pinterestUrl: pin.pinterestPinId ? `https://www.pinterest.com/pin/${pin.pinterestPinId}/` : null,
+      publishedAt: pin.publishedAt,
+      scheduledAt: pin.scheduledAt,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Export all scheduled and published pins to Excel / Google Sheets CSV
+ */
+export const exportPinsCSV = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { campaignId } = req.query;
+
+    const query = { userId };
+    if (campaignId) query.campaignId = campaignId;
+
+    const pins = await Pin.find(query)
+      .populate('campaignId', 'campaignName productName')
+      .sort({ scheduledAt: 1 });
+
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '""';
+      const clean = String(str).replace(/"/g, '""');
+      return `"${clean}"`;
+    };
+
+    const headers = [
+      'Campaign Name',
+      'Concept #',
+      'Creative Concept',
+      'Pin Title',
+      'Scheduled Date & Time',
+      'Publishing Status',
+      'Published Date & Time',
+      'Affiliate Destination Link',
+      'Pinterest Board ID',
+      'Pinterest Pin ID',
+      'Pinterest Pin URL',
+      'Impressions',
+      'Outbound Clicks',
+      'Saves',
+      'FTC Affiliate Disclosure Included',
+      'Image URL',
+    ];
+
+    const rows = pins.map((p) => [
+      escapeCsv(p.campaignId?.campaignName || 'N/A'),
+      p.conceptIndex || 1,
+      escapeCsv(p.creativeConcept?.name || 'Showcase'),
+      escapeCsv(p.title),
+      escapeCsv(p.scheduledAt ? new Date(p.scheduledAt).toISOString() : ''),
+      escapeCsv(p.publishingStatus),
+      escapeCsv(p.publishedAt ? new Date(p.publishedAt).toISOString() : ''),
+      escapeCsv(p.affiliateUrl),
+      escapeCsv(p.pinterestBoardId || ''),
+      escapeCsv(p.pinterestPinId || ''),
+      escapeCsv(p.pinterestPinId ? `https://www.pinterest.com/pin/${p.pinterestPinId}/` : ''),
+      p.analytics?.impressions || 0,
+      p.analytics?.outboundClicks || 0,
+      p.analytics?.saves || 0,
+      p.description?.toLowerCase().includes('affiliate') || p.description?.toLowerCase().includes('commission') ? 'YES' : 'NO',
+      escapeCsv(p.imageUrl),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+
+    const filename = `pinpilot-schedule-export-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csvContent);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const updatePin = async (req, res) => {
   try {
     const { title, description, caption, keywords, hashtags, callToAction, affiliateUrl, pinterestBoardId } = req.body;
@@ -158,6 +271,7 @@ export const regeneratePinContent = async (req, res) => {
 
     const campaign = pin.campaignId;
     const content = await generateCampaignContent({
+      userId: req.user._id,
       productName: campaign?.productName || 'Product',
       productDescription: campaign?.productDescription || '',
       brand: campaign?.brand || '',
@@ -170,7 +284,6 @@ export const regeneratePinContent = async (req, res) => {
       disclosureText: req.user.settings?.defaultAffiliateDisclosure,
     });
 
-    // Match concept index
     const matchingConcept = content.find((c) => c.conceptIndex === pin.conceptIndex) || content[0];
 
     pin.title = matchingConcept.pinTitle;
@@ -252,7 +365,6 @@ export const publishPinNow = async (req, res) => {
 
     logger.info(`Manual 'Publish Now' triggered for pin ${pin._id}`);
 
-    // Call execution
     await executePinPublishing({
       pinId: pin._id,
       campaignId: pin.campaignId,
@@ -266,12 +378,14 @@ export const publishPinNow = async (req, res) => {
         success: true,
         message: 'Pin successfully published to Pinterest!',
         pin: updatedPin,
+        checklist: updatedPin.publishChecklist,
       });
     } else {
       res.status(400).json({
         success: false,
         message: `Publishing failed: ${updatedPin.lastError || 'Unknown Pinterest API error'}`,
         pin: updatedPin,
+        checklist: updatedPin.publishChecklist,
       });
     }
   } catch (error) {

@@ -27,7 +27,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // If token expired, clear and redirect to login if not already there
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         localStorage.removeItem('pinpilot_token');
         localStorage.removeItem('pinpilot_user');
@@ -42,12 +41,14 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   getMe: () => api.get('/auth/me'),
+  getApiUsage: () => api.get('/auth/api-usage'),
   updateSettings: (data) => api.put('/auth/settings', data),
 };
 
 // Campaigns Endpoints
 export const campaignAPI = {
   analyzeUrl: (url) => api.post('/campaigns/analyze', { url }),
+  getNextSlot: (interval = 60) => api.get('/campaigns/next-slot', { params: { interval } }),
   createCampaign: (data) => api.post('/campaigns', data),
   getCampaigns: (params) => api.get('/campaigns', { params }),
   getCampaignById: (id) => api.get(`/campaigns/${id}`),
@@ -60,6 +61,12 @@ export const campaignAPI = {
 export const pinAPI = {
   getPins: (params) => api.get('/pins', { params }),
   getPinById: (id) => api.get(`/pins/${id}`),
+  getChecklist: (id) => api.get(`/pins/${id}/checklist`),
+  exportCSV: (campaignId) =>
+    api.get('/pins/export/csv', {
+      params: { campaignId },
+      responseType: 'blob',
+    }),
   updatePin: (id, data) => api.put(`/pins/${id}`, data),
   deletePin: (id) => api.delete(`/pins/${id}`),
   regenerateImage: (id, customPrompt) => api.post(`/pins/${id}/regenerate-image`, { customPrompt }),

@@ -40,9 +40,20 @@ export const connectDB = async () => {
     const dataDir = path.join(__dirname, '../../.mongodata');
     fs.mkdirSync(dataDir, { recursive: true });
 
+    // Clean up any stale lock files from previous abrupt terminations
+    try {
+      const lockFile = path.join(dataDir, 'mongod.lock');
+      if (fs.existsSync(lockFile)) {
+        fs.unlinkSync(lockFile);
+      }
+    } catch (e) {
+      // Ignore cleanup error
+    }
+
     logger.info('Initializing persistent embedded MongoDB engine...');
     const { MongoMemoryServer } = await import('mongodb-memory-server');
     mongoMemoryServer = await MongoMemoryServer.create({
+      spawnTimeoutMS: 60000,
       instance: {
         port: 27018,
         dbName: 'pinpilot',
@@ -55,8 +66,23 @@ export const connectDB = async () => {
     logger.info(`MongoDB Connected to persistent embedded instance at ${memoryUri}`);
     return mongoose.connection;
   } catch (memErr) {
-    logger.error(`Embedded MongoDB error: ${memErr.message}`);
-    throw memErr;
+    logger.warn(`Persistent embedded MongoDB error (${memErr.message}), falling back to fresh in-memory instance...`);
+    try {
+      const { MongoMemoryServer } = await import('mongodb-memory-server');
+      mongoMemoryServer = await MongoMemoryServer.create({
+        spawnTimeoutMS: 60000,
+        instance: {
+          dbName: 'pinpilot',
+        },
+      });
+      const fallbackUri = mongoMemoryServer.getUri();
+      await mongoose.connect(fallbackUri);
+      logger.info(`MongoDB Connected to fallback memory instance at ${fallbackUri}`);
+      return mongoose.connection;
+    } catch (fallbackErr) {
+      logger.error(`Fatal MongoDB connection failure: ${fallbackErr.message}`);
+      throw fallbackErr;
+    }
   }
 };
 

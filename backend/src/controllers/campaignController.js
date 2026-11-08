@@ -31,12 +31,64 @@ export const analyzeUrl = async (req, res) => {
 };
 
 /**
+ * Automatic detection of next available campaign timing (Smart Stacking / Auto-Chaining)
+ * Detects when the latest scheduled pin finishes, and calculates the exact 11th hour start time!
+ */
+export const getNextAvailableSlot = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const intervalMinutes = Number(req.query.interval) || 60;
+
+    // Find the latest scheduled pin for this user
+    const latestPin = await Pin.findOne({
+      userId,
+      publishingStatus: 'scheduled',
+    })
+      .sort({ scheduledAt: -1 })
+      .populate('campaignId', 'campaignName productName');
+
+    const now = new Date();
+
+    if (latestPin && new Date(latestPin.scheduledAt) > now) {
+      const lastTime = new Date(latestPin.scheduledAt);
+      const nextTime = new Date(lastTime.getTime() + intervalMinutes * 60 * 1000);
+
+      return res.json({
+        success: true,
+        hasQueuedCampaign: true,
+        lastScheduledPinTime: lastTime,
+        nextAvailableDate: nextTime,
+        previousCampaignName: latestPin.campaignId?.campaignName || 'Previous Campaign',
+        previousProductName: latestPin.campaignId?.productName || 'Previous Product',
+        message: `Auto-detected active queue. Previous campaign finishes at ${lastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Next campaign will start at ${nextTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+      });
+    }
+
+    // If no pins in queue, start at the next round hour
+    const nextRoundHour = new Date(now);
+    nextRoundHour.setMinutes(0, 0, 0);
+    nextRoundHour.setHours(nextRoundHour.getHours() + 1);
+
+    res.json({
+      success: true,
+      hasQueuedCampaign: false,
+      lastScheduledPinTime: null,
+      nextAvailableDate: nextRoundHour,
+      previousCampaignName: null,
+      message: `Queue is currently open. Ready to start immediately at ${nextRoundHour.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * Step 2: Create Campaign & Execute Full Automation Pipeline
  */
 export const createCampaign = async (req, res) => {
   try {
     const userId = req.user._id;
-    const {
+    let {
       campaignName,
       affiliateUrl,
       productName,
@@ -47,7 +99,8 @@ export const createCampaign = async (req, res) => {
       price,
       totalPins = 10,
       publishingInterval = 60, // in minutes
-      startDate = new Date(),
+      startDate,
+      autoChain = false,
       selectedBoard,
       imageStyle = 'commercial-product-aesthetic',
       customInstructions = '',
@@ -59,6 +112,23 @@ export const createCampaign = async (req, res) => {
         success: false,
         message: 'Product name and affiliate URL are required to create a campaign.',
       });
+    }
+
+    // Determine Start Date (Auto-chain detection if requested or selected)
+    let calculatedStartDate = startDate ? new Date(startDate) : new Date();
+
+    if (autoChain || !startDate) {
+      const latestPin = await Pin.findOne({
+        userId,
+        publishingStatus: 'scheduled',
+      }).sort({ scheduledAt: -1 });
+
+      const now = new Date();
+      if (latestPin && new Date(latestPin.scheduledAt) > now) {
+        // Auto-stack right after the 10th post of previous product
+        calculatedStartDate = new Date(new Date(latestPin.scheduledAt).getTime() + (Number(publishingInterval) || 60) * 60 * 1000);
+        logger.info(`Auto-chaining campaign "${campaignName}" to start at ${calculatedStartDate.toISOString()} after pin ${latestPin._id}`);
+      }
     }
 
     // Determine default board if not provided
@@ -84,7 +154,7 @@ export const createCampaign = async (req, res) => {
       price: price || '',
       totalPins: Math.min(Math.max(Number(totalPins) || 10, 1), 20),
       publishingInterval: Number(publishingInterval) || 60,
-      startDate: new Date(startDate),
+      startDate: calculatedStartDate,
       selectedBoard: board || { id: null, name: null },
       campaignStatus: 'generating',
       imageStyle,
@@ -101,10 +171,10 @@ export const createCampaign = async (req, res) => {
       campaignId: campaign._id,
       action: 'CAMPAIGN_CREATED',
       status: 'info',
-      message: `Campaign "${campaign.campaignName}" created. Automation pipeline initiated.`,
+      message: `Campaign "${campaign.campaignName}" created. Scheduled to start: ${calculatedStartDate.toLocaleString()}`,
     });
 
-    // Respond immediately with the created campaign so UI starts tracking live progress
+    // Respond immediately with the created campaign
     res.status(201).json({
       success: true,
       message: 'Campaign created successfully. Generating 10 Pinterest pins in background...',
@@ -160,6 +230,7 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
   });
 
   const pinsContent = await generateCampaignContent({
+    userId,
     productName: campaignData.productName,
     productDescription: campaignData.productDescription,
     brand: campaignData.brand,
@@ -172,7 +243,6 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
     disclosureText: user.settings?.defaultAffiliateDisclosure,
   });
 
-  // Limit to campaign's totalPins count
   const selectedPinsContent = pinsContent.slice(0, campaignData.totalPins || 10);
 
   // Step 2: AI Image Generation (10 vertical 1000x1500 commercial designs)
@@ -210,7 +280,7 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
 
   for (let i = 0; i < generatedPins.length; i++) {
     const pinData = generatedPins[i];
-    // Calculate publishing date: Pin 0 publishes at start time, Pin 1 at +interval, Pin 2 at +2*interval...
+    // Exact consecutive time: Pin 0 at start time, Pin 1 at +interval, etc.
     const scheduledTime = new Date(baseStart.getTime() + i * intervalMinutes * 60 * 1000);
 
     const pin = await Pin.create({
@@ -233,6 +303,18 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
       scheduledAt: scheduledTime,
       publishingStatus: 'scheduled',
       pinterestBoardId: campaignData.selectedBoard?.id || null,
+      publishChecklist: {
+        affiliateLinkVerified: !!campaignData.affiliateUrl,
+        pinterestPinVerified: false,
+        boardAttached: !!(campaignData.selectedBoard?.id),
+        ftcDisclosurePresent: pinData.description?.toLowerCase().includes('affiliate') || pinData.description?.toLowerCase().includes('commission'),
+        creativeDelivered: !!pinData.imageUrl,
+        seoTagsIndexed: !!(pinData.pinTitle && pinData.keywords?.length > 0),
+        nextInQueueArmed: true,
+        verifiedAt: null,
+        status: 'pending',
+        notes: `Armed for publishing at ${scheduledTime.toLocaleTimeString()}`,
+      },
     });
 
     // Persistent Agenda / MongoDB schedule
@@ -249,7 +331,7 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
     campaignStatus: 'active',
     'generationProgress.step': 'ready',
     'generationProgress.percentage': 100,
-    'generationProgress.message': `Campaign ready! ${generatedPins.length} pins generated and scheduled.`,
+    'generationProgress.message': `Campaign ready! ${generatedPins.length} pins scheduled. Next pin at ${baseStart.toLocaleTimeString()}`,
     'stats.totalPinsCount': generatedPins.length,
     'stats.scheduledCount': generatedPins.length,
     'stats.publishedCount': 0,
@@ -261,7 +343,7 @@ const runCampaignGenerationPipeline = async ({ campaignId, userId, campaignData,
     campaignId,
     action: 'CAMPAIGN_ACTIVATED',
     status: 'success',
-    message: `All ${generatedPins.length} pins successfully created and queued for publishing.`,
+    message: `All ${generatedPins.length} pins created and queued. Starting: ${baseStart.toLocaleString()}`,
   });
 
   logger.info(`Campaign ${campaignId} successfully generated and scheduled!`);
@@ -335,7 +417,6 @@ export const deleteCampaign = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Campaign not found.' });
     }
 
-    // Delete related pins and scheduled jobs
     await Pin.deleteMany({ campaignId: campaign._id });
     await ScheduledJob.deleteMany({ campaignId: campaign._id });
     await Campaign.deleteOne({ _id: campaign._id });

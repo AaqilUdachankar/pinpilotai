@@ -2,6 +2,8 @@ import express from 'express';
 import {
   getPins,
   getPinById,
+  getPinChecklist,
+  exportPinsCSV,
   updatePin,
   deletePin,
   regeneratePinImage,
@@ -16,8 +18,10 @@ const router = express.Router();
 
 router.use(protect);
 
+router.get('/export/csv', exportPinsCSV);
 router.get('/', getPins);
 router.get('/:id', getPinById);
+router.get('/:id/checklist', getPinChecklist);
 router.put('/:id', updatePin);
 router.delete('/:id', deletePin);
 router.post('/:id/regenerate-image', regeneratePinImage);

@@ -13,7 +13,8 @@ import {
   Sparkles,
   ExternalLink,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,6 +30,7 @@ export const Sidebar = ({ isMobileOpen, closeMobile }) => {
     { name: 'Publishing Calendar', path: '/calendar', icon: Calendar },
     { name: 'Pinterest Accounts', path: '/pinterest-accounts', icon: Share2 },
     { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+    { name: 'Instructions & Guide', path: '/instructions', icon: BookOpen },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 

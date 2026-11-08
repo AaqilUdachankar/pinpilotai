@@ -7,6 +7,7 @@ import {
   deleteCampaign,
   pauseCampaign,
   resumeCampaign,
+  getNextAvailableSlot,
 } from '../controllers/campaignController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/analyze', analyzeUrl);
+router.get('/next-slot', getNextAvailableSlot);
 router.post('/', createCampaign);
 router.get('/', getCampaigns);
 router.get('/:id', getCampaignById);
