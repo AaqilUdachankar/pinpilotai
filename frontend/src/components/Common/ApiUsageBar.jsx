@@ -36,37 +36,39 @@ export const ApiUsageBar = ({ compact = false }) => {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-slate-50 dark:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 text-xs">
         <div className="flex items-center gap-1.5 shrink-0 font-bold text-slate-700 dark:text-slate-200">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
           <span>AI Quota:</span>
         </div>
 
-        {/* Gemini Bar */}
-        <div className="flex-1 min-w-[100px]">
-          <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-            <span>Gemini: {gemini.requestsCount}/{gemini.limitRequests}</span>
-            <span className="font-semibold">{gemini.percentage}%</span>
+        <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4 flex-1 w-full">
+          {/* Gemini Bar */}
+          <div className="min-w-0">
+            <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
+              <span className="truncate">Gemini: {gemini.requestsCount}/{gemini.limitRequests}</span>
+              <span className="font-semibold shrink-0 ml-1">{gemini.percentage}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${getProgressColor(gemini.percentage)}`}
+                style={{ width: `${gemini.percentage}%` }}
+              />
+            </div>
           </div>
-          <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${getProgressColor(gemini.percentage)}`}
-              style={{ width: `${gemini.percentage}%` }}
-            />
-          </div>
-        </div>
 
-        {/* OpenAI Bar */}
-        <div className="flex-1 min-w-[100px]">
-          <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-            <span>OpenAI: {openai.requestsCount}/{openai.limitRequests}</span>
-            <span className="font-semibold">{openai.percentage}%</span>
-          </div>
-          <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${getProgressColor(openai.percentage)}`}
-              style={{ width: `${openai.percentage}%` }}
-            />
+          {/* OpenAI Bar */}
+          <div className="min-w-0">
+            <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
+              <span className="truncate">OpenAI: {openai.requestsCount}/{openai.limitRequests}</span>
+              <span className="font-semibold shrink-0 ml-1">{openai.percentage}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${getProgressColor(openai.percentage)}`}
+                style={{ width: `${openai.percentage}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>

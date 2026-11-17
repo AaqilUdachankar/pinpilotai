@@ -38,7 +38,7 @@ export const Layout = () => {
       
       <div className="lg:pl-64 flex flex-col flex-1 min-w-0">
         <Navbar toggleMobile={() => setIsMobileOpen((prev) => !prev)} title={getPageTitle(location.pathname)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300 min-w-0 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

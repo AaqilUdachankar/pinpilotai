@@ -137,20 +137,20 @@ export const Overview = () => {
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               onClick={() => navigate('/create-campaign')}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-lg shadow-rose-600/30 transition active:scale-95"
+              className="w-full xs:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-lg shadow-rose-600/30 transition active:scale-95"
             >
               <PlusCircle className="w-4 h-4" /> Create New Campaign
             </button>
             <button
               onClick={() => setShowExportModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur-md transition"
+              className="w-full xs:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur-md transition"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export Excel / Google Sheets
             </button>
             {!pinterestAccount?.isConnected && (
               <button
                 onClick={() => navigate('/pinterest-accounts')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur-md transition"
+                className="w-full xs:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur-md transition"
               >
                 <Share2 className="w-4 h-4" /> Connect Pinterest Business
               </button>
@@ -162,29 +162,29 @@ export const Overview = () => {
       </div>
 
       {/* Metrics Stat Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
           return (
             <div
               key={idx}
               onClick={card.onClick}
-              className="group cursor-pointer bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              className="group cursor-pointer bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 truncate pr-1">
                   {card.title}
                 </span>
-                <div className={`p-2 rounded-xl ${card.bg} ${card.color} group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-4 h-4" />
+                <div className={`p-1.5 sm:p-2 rounded-xl ${card.bg} ${card.color} group-hover:scale-110 transition-transform shrink-0`}>
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                <div className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {card.value}
                 </div>
                 {card.subtitle && (
-                  <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
                     {card.subtitle}
                   </p>
                 )}
@@ -369,18 +369,18 @@ export const Overview = () => {
               return (
                 <div
                   key={log._id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50/60 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs"
+                  className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 xs:gap-3 p-2.5 sm:p-3 rounded-xl bg-slate-50/60 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
-                    <span className="font-semibold text-slate-700 dark:text-slate-200 shrink-0">
+                    <span className="font-semibold text-slate-700 dark:text-slate-200 shrink-0 text-[11px] sm:text-xs">
                       [{log.action}]
                     </span>
-                    <span className="text-slate-600 dark:text-slate-300 truncate">
+                    <span className="text-slate-600 dark:text-slate-300 truncate text-[11px] sm:text-xs">
                       {log.message}
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-400 shrink-0 ml-3">
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 shrink-0 self-end xs:self-auto pl-4 xs:pl-0">
                     {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

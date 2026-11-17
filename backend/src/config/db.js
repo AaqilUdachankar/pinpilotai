@@ -42,9 +42,12 @@ export const connectDB = async () => {
 
     // Clean up any stale lock files from previous abrupt terminations
     try {
-      const lockFile = path.join(dataDir, 'mongod.lock');
-      if (fs.existsSync(lockFile)) {
-        fs.unlinkSync(lockFile);
+      const staleLocks = ['mongod.lock', 'WiredTiger.lock'];
+      for (const lockName of staleLocks) {
+        const lockPath = path.join(dataDir, lockName);
+        if (fs.existsSync(lockPath)) {
+          fs.unlinkSync(lockPath);
+        }
       }
     } catch (e) {
       // Ignore cleanup error
@@ -53,11 +56,11 @@ export const connectDB = async () => {
     logger.info('Initializing persistent embedded MongoDB engine...');
     const { MongoMemoryServer } = await import('mongodb-memory-server');
     mongoMemoryServer = await MongoMemoryServer.create({
-      spawnTimeoutMS: 60000,
       instance: {
         port: 27018,
         dbName: 'pinpilot',
         dbPath: dataDir,
+        launchTimeout: 60000,
       },
     });
 
@@ -70,9 +73,9 @@ export const connectDB = async () => {
     try {
       const { MongoMemoryServer } = await import('mongodb-memory-server');
       mongoMemoryServer = await MongoMemoryServer.create({
-        spawnTimeoutMS: 60000,
         instance: {
           dbName: 'pinpilot',
+          launchTimeout: 60000,
         },
       });
       const fallbackUri = mongoMemoryServer.getUri();

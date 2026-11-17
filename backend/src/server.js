@@ -11,6 +11,7 @@ import { connectDB } from './config/db.js';
 import { initScheduler } from './services/schedulerService.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
+import User from './models/User.js';
 
 import authRoutes from './routes/authRoutes.js';
 import campaignRoutes from './routes/campaignRoutes.js';
@@ -96,10 +97,28 @@ const startServer = async () => {
     // 1. Connect MongoDB
     await connectDB();
 
-    // 2. Initialize Persistent Scheduler (Agenda + Watchdog)
+    // 2. Ensure initial demo account exists
+    try {
+      const existingUser = await User.findOne({ email: 'demo@pinpilot.ai' });
+      if (!existingUser) {
+        const bcrypt = (await import('bcryptjs')).default;
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash('DemoPassword123!', salt);
+        await User.create({
+          name: 'Demo User',
+          email: 'demo@pinpilot.ai',
+          passwordHash,
+        });
+        logger.info('Demo user account initialized (demo@pinpilot.ai)');
+      }
+    } catch (seedErr) {
+      logger.warn(`Demo seed check: ${seedErr.message}`);
+    }
+
+    // 3. Initialize Persistent Scheduler (Agenda + Watchdog)
     await initScheduler();
 
-    // 3. Listen on Port
+    // 4. Listen on Port
     const server = app.listen(PORT, () => {
       logger.info(`=======================================================`);
       logger.info(`🚀 PinPilot AI Backend running on http://localhost:${PORT}`);
