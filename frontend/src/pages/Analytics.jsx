@@ -189,10 +189,10 @@ export const Analytics = () => {
 
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} />
+              <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
+              <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#0f172a',
@@ -223,29 +223,29 @@ export const Analytics = () => {
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {topPins.map((pin) => (
-              <div key={pin._id} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
+              <div key={pin._id} className="py-3 flex items-center justify-between gap-2.5 sm:gap-4">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                   <img
                     src={pin.imageUrl}
                     alt=""
-                    className="w-10 h-14 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 shrink-0"
+                    className="w-9 h-13 sm:w-10 sm:h-14 rounded-lg object-cover bg-slate-100 dark:bg-slate-800 shrink-0"
                   />
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" title={pin.title}>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate" title={pin.title}>
                       {pin.title}
                     </h4>
-                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate">
                       {pin.campaignId?.campaignName || 'Campaign'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 text-right">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0 text-right">
                   <div>
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">
                       {pin.analytics?.outboundClicks || 0} clicks
                     </span>
-                    <span className="text-[11px] text-slate-400 block">
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 block">
                       {pin.analytics?.impressions || 0} views
                     </span>
                   </div>
@@ -255,10 +255,10 @@ export const Analytics = () => {
                       href={`https://www.pinterest.com/pin/${pin.pinterestPinId}/`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 transition"
+                      className="p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 transition shrink-0"
                       title="View on Pinterest"
                     >
-                      <ArrowUpRight className="w-4 h-4" />
+                      <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </a>
                   )}
                 </div>

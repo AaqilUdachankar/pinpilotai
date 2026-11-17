@@ -91,14 +91,14 @@ export const PublishingCalendar = () => {
         </div>
 
         {/* Month Navigation */}
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center justify-between sm:justify-start gap-2 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full sm:w-auto">
           <button
             onClick={prevMonth}
             className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-extrabold text-slate-800 dark:text-white px-3 min-w-[140px] text-center">
+          <span className="text-sm font-extrabold text-slate-800 dark:text-white px-3 flex-1 sm:min-w-[140px] text-center">
             {monthName}
           </span>
           <button
@@ -108,6 +108,11 @@ export const PublishingCalendar = () => {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      {/* Mobile Swipe Hint */}
+      <div className="lg:hidden flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <span>👉 Scroll horizontally to inspect full calendar grid</span>
       </div>
 
       {/* Calendar Grid Card */}
@@ -209,8 +214,8 @@ export const PublishingCalendar = () => {
   </div>
 
       {/* Legend & Guidance */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
-        <div className="flex items-center gap-4">
+      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <span className="text-slate-400 font-semibold uppercase tracking-wider text-[11px]">Legend:</span>
           <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Scheduled (Cloud Queue)

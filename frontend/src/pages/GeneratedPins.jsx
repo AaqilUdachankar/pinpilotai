@@ -174,17 +174,17 @@ export const GeneratedPins = () => {
         </div>
 
         {/* Top Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() => setShowExportModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 transition shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 transition shadow-sm whitespace-nowrap"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span>Export to Excel / Google Sheets</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Export to Excel / Sheets</span>
           </button>
 
           {/* Campaign Selector Dropdown */}
-          <div className="w-full sm:w-64">
+          <div className="w-full xs:w-56 sm:w-64">
             <select
               value={selectedCampaignId}
               onChange={(e) => {
@@ -235,7 +235,7 @@ export const GeneratedPins = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
           {pins.map((pin) => (
             <PinCard
               key={pin._id}

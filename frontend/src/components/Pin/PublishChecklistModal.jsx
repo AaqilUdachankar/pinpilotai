@@ -108,12 +108,12 @@ export const PublishChecklistModal = ({ isOpen, onClose, pin }) => {
         </div>
 
         {/* Verification Status Score */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs">
+        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs">
           <span className="font-bold text-slate-600 dark:text-slate-300">
             Compliance & Verification Score:
           </span>
           <span
-            className={`font-black px-2.5 py-1 rounded-full ${
+            className={`font-black px-2.5 py-1 rounded-full self-start xs:self-auto ${
               isAllPassed
                 ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
                 : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'

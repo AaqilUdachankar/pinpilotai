@@ -141,22 +141,22 @@ export const PinterestAccounts = () => {
 
       {/* Main Connection Status Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-pinterest flex items-center justify-center text-white shadow-lg shadow-rose-500/25 shrink-0">
-              <span className="text-3xl font-black">P</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-pinterest flex items-center justify-center text-white shadow-lg shadow-rose-500/25 shrink-0">
+              <span className="text-2xl sm:text-3xl font-black">P</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
                   Official Pinterest API v5
                 </h3>
                 {pinterestAccount?.isConnected ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shrink-0">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Authorized & Active
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 shrink-0">
                     <AlertCircle className="w-3.5 h-3.5" /> Not Connected
                   </span>
                 )}
@@ -169,20 +169,20 @@ export const PinterestAccounts = () => {
             </div>
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto">
             {pinterestAccount?.isConnected ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleRefreshBoards}
                   disabled={refreshingBoards}
-                  className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${refreshingBoards ? 'animate-spin' : ''}`} />
                   Sync Boards
                 </button>
                 <button
                   onClick={handleDisconnect}
-                  className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Disconnect
@@ -192,7 +192,7 @@ export const PinterestAccounts = () => {
               <button
                 onClick={handleConnect}
                 disabled={connecting}
-                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-pinterest hover:bg-pinterest-dark text-white font-extrabold text-sm shadow-lg shadow-rose-500/25 transition active:scale-95 disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-pinterest hover:bg-pinterest-dark text-white font-extrabold text-sm shadow-lg shadow-rose-500/25 transition active:scale-95 disabled:opacity-50"
               >
                 <Share2 className="w-4 h-4" />
                 <span>{connecting ? 'Connecting...' : 'Connect Pinterest Account'}</span>

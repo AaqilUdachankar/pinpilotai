@@ -108,8 +108,8 @@ export const MyCampaigns = () => {
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto w-full sm:w-auto scrollbar-thin">
           {filterTabs.map((tab) => (
             <button
               key={tab.id}
@@ -172,15 +172,17 @@ export const MyCampaigns = () => {
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block truncate">
                         {camp.productCategory || 'Affiliate Product'}
                       </span>
-                      <h3 className="font-extrabold text-base text-slate-900 dark:text-white leading-snug">
+                      <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-snug break-words">
                         {camp.campaignName}
                       </h3>
                     </div>
-                    <StatusBadge status={camp.campaignStatus} />
+                    <div className="shrink-0">
+                      <StatusBadge status={camp.campaignStatus} />
+                    </div>
                   </div>
 
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-1">

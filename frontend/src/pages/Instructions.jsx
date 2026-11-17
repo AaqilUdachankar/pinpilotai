@@ -169,7 +169,7 @@ export const Instructions = () => {
       </div>
 
       {/* Tabs Bar */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto">
+      <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto scrollbar-thin">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -322,7 +322,7 @@ export const Instructions = () => {
 
             <button
               onClick={() => setModalPin(currentSamplePin)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition shrink-0 active:scale-95"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition shrink-0 active:scale-95"
             >
               <Eye className="w-4 h-4" />
               <span>Launch Live Checklist Modal</span>
@@ -555,10 +555,10 @@ export const Instructions = () => {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
             <button
-              onClick={() => navigate('/generated-pins')}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition"
+              onClick={() => navigate('/pins')}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition"
             >
               <span>View All Pins in Generated Pins</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -566,7 +566,7 @@ export const Instructions = () => {
 
             <button
               onClick={() => setModalPin(currentSamplePin)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition active:scale-95"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition active:scale-95"
             >
               <Eye className="w-4 h-4" />
               <span>Test Checklist Modal Now</span>
