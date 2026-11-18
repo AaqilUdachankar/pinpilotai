@@ -100,3 +100,29 @@ cd ../backend && node src/testServices.js
 # 3. Test unified server
 node src/server.js
 ```
+
+---
+
+## 6. Troubleshooting: "404 Not Found" on `/api/auth/login` or `/api/auth/google` in Production
+
+If you see `Failed to load resource: the server responded with a status of 404 (Not Found)` on `api/auth/login` in your production browser console, check which deployment model you used:
+
+### Cause 1: Frontend Deployed to Vercel/Netlify without `VITE_API_URL`
+- **What happened:** Vercel only hosts static HTML/JS files (`dist`). By default, Vite looks for `/api/...` on the same domain (`https://your-app.vercel.app/api/...`), where no backend is running.
+- **Fix:**
+  1. Deploy your backend to a persistent Node host like [Render](https://render.com) or [Railway](https://railway.app).
+  2. In your Vercel/Netlify Dashboard, go to **Settings &rarr; Environment Variables**.
+  3. Add:
+     `VITE_API_URL` = `https://your-backend-app.onrender.com/api`
+  4. In your backend environment variables, ensure `CLIENT_URL` is set to `https://your-app.vercel.app`.
+  5. In Vercel, click **Redeploy** (environment variables in Vite are compiled during the build step).
+
+### Cause 2: Deployed as a "Static Site" on Render instead of "Web Service"
+- **What happened:** Render offers "Static Site" (free HTML only) and "Web Service" (runs Node.js). If you picked "Static Site", the Express backend was never executed.
+- **Fix:** Create a new **Web Service** on Render with:
+  - **Build Command:** `npm run build`
+  - **Start Command:** `npm start`
+
+### Cause 3: Missing `MONGODB_URI` Causing Backend Crash
+- **What happened:** In production (`NODE_ENV=production`), the backend requires a real MongoDB Atlas URI. If `MONGODB_URI` was empty, the backend crashed on boot and could not respond to requests.
+- **Fix:** Add your MongoDB Atlas connection string in your host's Environment Variables under `MONGODB_URI`. Check your host's **Logs** tab to confirm the server printed `🚀 PinPilot AI Backend running`.

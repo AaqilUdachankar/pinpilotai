@@ -26,7 +26,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Intercept 401s
+// Intercept Responses & Common Network Errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,6 +35,11 @@ api.interceptors.response.use(
         localStorage.removeItem('pinpilot_token');
         localStorage.removeItem('pinpilot_user');
       }
+    } else if (error.response?.status === 404) {
+      console.warn(
+        `[PinPilot API 404] Endpoint not found at ${error.config?.baseURL}${error.config?.url}. ` +
+        `If deployed in production, verify that your backend server is active and VITE_API_URL is configured in your hosting dashboard.`
+      );
     }
     return Promise.reject(error);
   }
