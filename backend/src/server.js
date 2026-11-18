@@ -79,6 +79,7 @@ const authLimiter = rateLimit({
   },
 });
 app.use('/api/auth/', authLimiter);
+app.use('/auth/', authLimiter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -89,6 +90,7 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
   });
 });
+app.get('/health', (req, res) => res.redirect('/api/health'));
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -98,12 +100,15 @@ app.use('/api/pinterest', pinterestRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/scheduler', schedulerRoutes);
 
+// Safe Aliases for requests without /api prefix
+app.use('/auth', authRoutes);
+
 // Serve frontend build in production if available
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
   app.get('*', (req, res, next) => {
-    if (req.originalUrl.startsWith('/api')) {
+    if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/auth')) {
       return next();
     }
     res.sendFile(path.join(frontendDist, 'index.html'));
