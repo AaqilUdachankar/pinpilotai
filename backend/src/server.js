@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { connectDB } from './config/db.js';
@@ -35,8 +36,18 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 
+// CORS setup (supports single URL, multiple comma-separated URLs, or local dev defaults)
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
+  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5000'];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS error: Origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 
@@ -86,6 +97,18 @@ app.use('/api/pins', pinRoutes);
 app.use('/api/pinterest', pinterestRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/scheduler', schedulerRoutes);
+
+// Serve frontend build in production if available
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 // Error Middlewares
 app.use(notFound);

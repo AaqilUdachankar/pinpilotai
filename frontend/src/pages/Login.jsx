@@ -135,6 +135,14 @@ export const Login = () => {
               Create an account
             </NavLink>
           </p>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center gap-3 text-[11px] text-slate-400">
+            <NavLink to="/privacy" className="hover:text-rose-500 transition underline underline-offset-2">
+              Privacy Policy
+            </NavLink>
+            <span>•</span>
+            <span>FTC & Pinterest Compliant</span>
+          </div>
         </div>
       </div>
     </div>

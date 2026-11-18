@@ -16,6 +16,7 @@ import { Instructions } from './pages/Instructions';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -46,9 +47,11 @@ export default function App() {
         <ToastProvider>
           <Router>
             <Routes>
-              {/* Public Auth Routes */}
+              {/* Public Auth & Legal Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
               {/* Protected Dashboard Routes */}
               <Route

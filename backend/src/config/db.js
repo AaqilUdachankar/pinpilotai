@@ -24,6 +24,13 @@ export const connectDB = async () => {
     }
   }
 
+  // In production, require real MongoDB URI (e.g. MongoDB Atlas)
+  if (process.env.NODE_ENV === 'production') {
+    const prodMsg = 'FATAL: MONGODB_URI is required in production mode (e.g. MongoDB Atlas connection string). Please configure MONGODB_URI in your cloud deployment environment settings.';
+    logger.error(prodMsg);
+    throw new Error(prodMsg);
+  }
+
   // 2. Standard Local MongoDB on port 27017
   try {
     const localUri = 'mongodb://127.0.0.1:27017/pinpilot';

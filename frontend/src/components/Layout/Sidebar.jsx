@@ -155,6 +155,18 @@ export const Sidebar = ({ isMobileOpen, closeMobile }) => {
             <LogOut className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Footer Links */}
+        <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+          <NavLink
+            to="/privacy"
+            onClick={closeMobile}
+            className="hover:text-rose-600 dark:hover:text-rose-400 transition"
+          >
+            Privacy Policy
+          </NavLink>
+          <span className="text-[10px]">v1.2 • PinPilot AI</span>
+        </div>
       </aside>
     </>
   );
